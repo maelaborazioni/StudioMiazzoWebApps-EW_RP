@@ -1,0 +1,6 @@
+allowCreationRelatedRecords:true,
+foreignDataSource:"db:/ma_anagrafiche/lavoratori_giustificativitesta",
+name:"richieste_da_evadere",
+primaryDataSource:"db:/ma_anagrafiche/lavoratori_giustificativitesta",
+typeid:22,
+uuid:"97688308-CAC7-470D-B9D6-0795416673CE"

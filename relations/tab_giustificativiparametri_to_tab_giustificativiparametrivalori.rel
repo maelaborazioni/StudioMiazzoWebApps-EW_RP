@@ -1,0 +1,10 @@
+allowParentDeleteWhenHavingRelatedRecords:false,
+foreignDataSource:"db:/ma_common/tab_giustificativiparametrivalori",
+items:[
+{foreignColumnName:"idtabgiustificativoparametro",primaryDataProviderID:"idtabgiustificativoparametro",typeid:23,uuid:"66740902-F4D8-4289-B1B2-A392541D91E9"}
+],
+joinType:1,
+name:"tab_giustificativiparametri_to_tab_giustificativiparametrivalori",
+primaryDataSource:"db:/ma_common/tab_giustificativiparametri",
+typeid:22,
+uuid:"EE4525CB-2ADA-4684-B143-FCAC69F597F5"

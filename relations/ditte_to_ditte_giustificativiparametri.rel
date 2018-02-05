@@ -1,0 +1,12 @@
+allowCreationRelatedRecords:true,
+allowParentDeleteWhenHavingRelatedRecords:false,
+deleteRelatedRecords:true,
+foreignDataSource:"db:/ma_anagrafiche/ditte_giustificativiparametri",
+items:[
+{foreignColumnName:"idditta",primaryDataProviderID:"idditta",typeid:23,uuid:"817C6016-FC37-4546-94B1-BE3F6DA8C5E6"}
+],
+joinType:1,
+name:"ditte_to_ditte_giustificativiparametri",
+primaryDataSource:"db:/ma_anagrafiche/ditte",
+typeid:22,
+uuid:"367BC79F-A0D3-429F-80C2-3A9C748D8EFA"

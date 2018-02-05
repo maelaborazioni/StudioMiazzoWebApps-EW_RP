@@ -1,0 +1,9 @@
+foreignDataSource:"db:/ma_common/tab_giustificativiparametri",
+items:[
+{foreignColumnName:"idtabgiustificativoparametro",primaryDataProviderID:"idtabgiustificativoparametro",typeid:23,uuid:"F74D217B-5EBE-4A32-AD3E-58428F4D0B5D"}
+],
+joinType:1,
+name:"ditte_giustificativiparametri_to_tab_giustificativiparametri",
+primaryDataSource:"db:/ma_anagrafiche/ditte_giustificativiparametri",
+typeid:22,
+uuid:"05C3240C-78FE-4796-B11A-DB696A38CEAB"

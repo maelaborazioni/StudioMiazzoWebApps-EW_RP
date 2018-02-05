@@ -1,0 +1,7 @@
+allowCreationRelatedRecords:true,
+foreignDataSource:"db:/ma_anagrafiche/lavoratori_giustificativitesta",
+joinType:1,
+name:"richieste_evase",
+primaryDataSource:"db:/ma_anagrafiche/lavoratori_giustificativitesta",
+typeid:22,
+uuid:"301BEB4A-1906-415B-BB1F-06985FF88627"

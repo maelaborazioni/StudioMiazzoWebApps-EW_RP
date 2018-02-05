@@ -1,0 +1,16 @@
+extendsID:"-1",
+items:[
+{
+height:40,
+partType:5,
+typeid:19,
+uuid:"79A5A803-47A6-4044-9AF1-339D8813A84A"
+}
+],
+name:"rp_solo_dip_con_richieste",
+navigatorID:"-1",
+showInMenu:true,
+size:"260,40",
+styleName:"leaf_style",
+typeid:3,
+uuid:"69CF020C-015D-4234-93EE-2D3615DE703D"

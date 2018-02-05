@@ -1,0 +1,8 @@
+addEmptyValue:1,
+customValues:"Tutti i dipendenti | 1\r
+Dipendenti con richieste | 2",
+name:"tipo_dip_permessi",
+returnDataProviders:1,
+showDataProviders:1,
+typeid:34,
+uuid:"DDCEFBBD-B7C3-466A-9EDE-10F426597863"

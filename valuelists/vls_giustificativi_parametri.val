@@ -1,0 +1,12 @@
+addEmptyValue:1,
+dataProviderID1:"idtabgiustificativoparametro",
+dataProviderID2:"codice",
+dataProviderID3:"descrizione",
+dataSource:"db:/ma_common/tab_giustificativiparametri",
+name:"vls_giustificativi_parametri",
+returnDataProviders:1,
+separator:"  -",
+showDataProviders:6,
+typeid:34,
+uuid:"7935F6F9-1B4D-49AE-8B7E-A67D18F93C19",
+valueListType:1

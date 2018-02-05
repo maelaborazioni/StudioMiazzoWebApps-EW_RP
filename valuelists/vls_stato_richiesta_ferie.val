@@ -1,0 +1,10 @@
+addEmptyValue:1,
+customValues:"Tutte | 0\r
+Confermate | 1\r
+Rifiutate | 2\r
+Da elaborare | 3",
+name:"vls_stato_richiesta_ferie",
+returnDataProviders:1,
+showDataProviders:1,
+typeid:34,
+uuid:"34D78CC3-37DB-4EDE-BFF6-CFC8AE38AC94"

@@ -1,0 +1,13 @@
+encapsulation:60,
+items:[
+{
+height:480,
+partType:5,
+typeid:19,
+uuid:"12E1C85E-1F82-4B7D-B1C6-874123913165"
+}
+],
+name:"rp_webservice",
+showInMenu:true,
+typeid:3,
+uuid:"452E0677-5F55-496E-A03E-5AE84F167C98"
