@@ -35,14 +35,14 @@ function ws_read() {
 			break;
 		case 402:
 			object.code = 402;
-			object.message = "La gestione della richiesta è avvenuta ma si è verificato un errore durante l'inserimento dell'evento in giornaliera di budget. \
+			object.message = "La gestione della richiesta &#232; avvenuta ma si &#232; verificato un errore durante l'inserimento dell'evento in giornaliera di budget. \
 		                      Controllare dall'interno dell'applicazione o contattare il servizio di assistenza";
 			object.message_en = "Request has been successfully handled but inserting the event in the presence has failed.\
 			                     Log on to the application to verify the request or contact the customer service";
 			break;
 		case 403:
 			object.code = 403;
-			object.message = "La richiesta non è più presente e potrebbe essere stata eliminata dall'utente stesso.\
+			object.message = "La richiesta non &#232; pi&#249; presente e potrebbe essere stata eliminata dall'utente stesso.\
 		                      Controllare dall'interno dell'applicazione o contattare il servizio di assistenza";
 			object.message_en = "Request no longer exists. It could be canceled by user.\
 				                 Log on to the application to verify the request or contact the customer service";
@@ -56,7 +56,7 @@ function ws_read() {
 		break;
 		case 405:
 		    object.code = 405;
-		    object.message = "La richiesta è già stata gestita in precedenza!\
+		    object.message = "La richiesta &#232; gi&#224; stata gestita in precedenza!\
 	                          Controllare dall'interno dell'applicazione o contattare il servizio di assistenza";
 		    object.message_en = "Request has already been handled.\
 		                         Log on to the application to verify the request or contact the customer service";
@@ -168,7 +168,7 @@ function gestisciRichiestaWS(clientDb, idgiustificativotesta, operatore_id, stat
 		if (fs.find()) {
 			fs.idlavoratoregiustificativotesta = idgiustificativotesta;
 			fs.stato = '^';
-			if (fs.search()) {
+			if (fs.search() > 0) {
 				databaseManager.startTransaction();
 	
 				/** @type {JSRecord<db:/ma_anagrafiche/lavoratori_giustificativitesta>}*/
@@ -189,7 +189,7 @@ function gestisciRichiestaWS(clientDb, idgiustificativotesta, operatore_id, stat
 					var fsRighe = databaseManager.getFoundSet(clientDb, globals.Table.RP_RIGHE);
 					if (fsRighe.find()) {
 						fsRighe.idlavoratoregiustificativotesta = idgiustificativotesta;
-						if (fsRighe.search()) {
+						if (fsRighe.search() > 0) {
 	
 							fsRighe.sort('giorno asc');
 							var giorno_dal = fsRighe.getRecord(1).giorno;
@@ -220,8 +220,6 @@ function gestisciRichiestaWS(clientDb, idgiustificativotesta, operatore_id, stat
 										'',
 										recRiga.giornointero //flag copertura orario teorico
 									)
-									//TODO da rimuovere!!!
-//									wsName = 'http://srv-epiweb/Leaf_Old';
 									var saved = salvaEventoWS(wsName, evParams, clientDb);
 	
 									if (!saved)
@@ -252,14 +250,16 @@ function gestisciRichiestaWS(clientDb, idgiustificativotesta, operatore_id, stat
 						// codice di errore recupero giustificativo righe
 							return 406;
 					} else
-					// codice di errore generico
+						// codice di errore generico (giustificativo testa find mode)
 						return 404;
 												
 				}
 	
 			}
+			// codice di errore giustificativo testa
 			return 405;
 		}
+		// codice di errore generico (giustificativo testa find mode)
 		return 404;
 	}
 	catch(ex)
