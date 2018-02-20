@@ -2570,7 +2570,7 @@ function inviaMailRichiestaEsistente(rec)
 										null,
 										null,
 										null,
-										globals.setSendGridSmtpProperties()))
+										globals.setSparkPostSmtpProperties()))
 				globals.ma_utl_showWarningDialog(plugins.mail.getLastSendMailExceptionMsg(), 'Comunicazione gestione richiesta');
 			else
                 globals.ma_utl_showWarningDialog('Inoltro della comunicazione avvenuto correttamente!','Comunicazione gestione richiesta');

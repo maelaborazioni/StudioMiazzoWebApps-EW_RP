@@ -110,7 +110,7 @@ function updateStatoRichiesta(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,e
 			
 		if(emailaddress && plugins.mail.isValidEmailAddress(emailaddress))
 		{
-            var properties = globals.setSendGridSmtpProperties(); 
+            var properties = globals.setSparkPostSmtpProperties(); 
 			var subject = "Comunicazione gestione richiesta ferie e permessi";
 			var msgText = "plain msg<html>Gentile utente, <br/> la sua richiesta del giorno " + datarichiesta + " relativa al periodo dal giorno ";
 			    msgText += (utils.dateFormat(giorno_dal,globals.EU_DATEFORMAT) + ' al giorno ' + utils.dateFormat(giorno_al,globals.EU_DATEFORMAT));
