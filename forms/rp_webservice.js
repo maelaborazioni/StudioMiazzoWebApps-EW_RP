@@ -53,22 +53,28 @@ function ws_read() {
 	                          Controllare dall'interno dell'applicazione o contattare il servizio di assistenza";
 		    object.message_en = "Error during request's update. Generic error.\
 		                         Log on to the application to verify the request or contact the customer service";
-		break;
+		     break;
 		case 405:
 		    object.code = 405;
 		    object.message = "La richiesta &#232; gi&#224; stata gestita in precedenza!\
 	                          Controllare dall'interno dell'applicazione o contattare il servizio di assistenza";
 		    object.message_en = "Request has already been handled.\
 		                         Log on to the application to verify the request or contact the customer service";
-		break;
+		     break;
 		case 406:
 		    object.code = 406;
+		    object.message = "La richiesta &#232; stata gestita ma si sono verificati errori in fase di invio della mail od in inserimento evento in giornaliera di budget. \
+	                          Controllare dall'interno dell'applicazione o contattare il servizio di assistenza";
+		    object.message_en = "Error during request's handling. Request's specification not found.\
+		                         Log on to the application to verify the request or contact the customer service";
+		     break;
+		case 407:
+		    object.code = 407;
 		    object.message = "Errore durante la gestione della richiesta. Specifica della richiesta non trovata.\
 	                          Controllare dall'interno dell'applicazione o contattare il servizio di assistenza";
 		    object.message_en = "Error during request's handling. Request's specification not found.\
 		                         Log on to the application to verify the request or contact the customer service";
-		break;
-		
+		     break;
 		default:
 			object.code = -1;
 			object.message = "";
@@ -264,7 +270,8 @@ function gestisciRichiestaWS(clientDb, idgiustificativotesta, operatore_id, stat
 	}
 	catch(ex)
 	{
-		return 406;
+		application.output('Metodo gestisciRichiestaWS : ' + ex.message,LOGGINGLEVEL.ERROR);
+		return 407;
 	}
 
 }
