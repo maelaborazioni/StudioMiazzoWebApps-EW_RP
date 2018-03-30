@@ -23,8 +23,13 @@ function refreshRateiDipendenti(event) {
  * @properties={typeid:24,uuid:"DCEEEAD3-A719-4FEC-9CA5-4BDB063280C0"}
  */
 function onShowForm(_firstShow, _event) {
+
+	var ultimoPeriodoPredisposto = globals.getUltimoPeriodoPredisposto(idlavoratore);
+	var dataUltimoPeriodoPredisposto = globals.getLastDatePeriodo(ultimoPeriodoPredisposto);
+	if(dataSituazioneAlGiorno == null
+	   || dataSituazioneAlGiorno > dataUltimoPeriodoPredisposto)
+   	   dataSituazioneAlGiorno = dataUltimoPeriodoPredisposto;
 	
-//	_super.onShowForm(_firstShow, _event);
 	gestisciTabRateiTbl(controller.getName(),
 		                elements.tabSitRatei.getName(),
 						'rp_ratei_dipendente',
@@ -40,7 +45,12 @@ function onShowForm(_firstShow, _event) {
  */
 function onRecordSelection(_event, _form) {
 	
-    //_super.onRecordSelection(_event, _form)
+	var ultimoPeriodoPredisposto = globals.getUltimoPeriodoPredisposto(idlavoratore);
+	var dataUltimoPeriodoPredisposto = globals.getLastDatePeriodo(ultimoPeriodoPredisposto);
+	if(dataSituazioneAlGiorno == null
+	   || dataSituazioneAlGiorno > dataUltimoPeriodoPredisposto)
+   	   dataSituazioneAlGiorno = dataUltimoPeriodoPredisposto;
+	
 	gestisciTabRateiTbl(controller.getName(),
                         elements.tabSitRatei.getName(),
 		                'rp_ratei_dipendente',
