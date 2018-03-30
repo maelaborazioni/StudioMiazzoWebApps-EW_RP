@@ -741,6 +741,11 @@ function process_richiesta_permessi(event, fs)
 						databaseManager.setAutoSave(false);
 						return true;
 					}
+					
+					// in caso di autoapprovazione gestisci la richiesta
+					if(bAutoApprovazione)
+					  globals.gestisciRichiesta(idLavoratoreGiustificativoTesta, 1, false);
+										
 				}
 				else
 				{
@@ -753,12 +758,12 @@ function process_richiesta_permessi(event, fs)
 						||	(vIsGestore 
 							&& !bAutoRichiesta 
 							&& solutionModel.getForm('rp_elenco_richieste_situazione')))
-					{
-					    globals.gestisciRichiesta(idLavoratoreGiustificativoTesta, 1, false);
-					    plugins.busy.unblock();
-						databaseManager.setAutoSave(false);
-						return true;
-					}
+//					{
+						globals.gestisciRichiesta(idLavoratoreGiustificativoTesta, 1, false);
+//					    plugins.busy.unblock();
+//						databaseManager.setAutoSave(false);
+//						return true;
+//					}
 				}
 								
 				var emailaddresses = [];
@@ -845,7 +850,7 @@ function process_richiesta_permessi(event, fs)
 								if (infoSup.getValue(iu, 5) <= livAut && !globals.ma_utl_userHasKey(infoSup.getValue(iu, 1), scIdMailSuperiore, infoSup.getValue(iu, 6), infoSup.getValue(iu, 4))) {
 									infoTuple = [infoSup.getValue(iu, 1), infoSup.getValue(iu, 3), infoSup.getValue(iu, 5), infoSup.getValue(iu, 4)];
 									emailaddresses.push(infoTuple);
-									emailaddressesOthers.push(infoSup.getValue(iu, 1)); //TODO
+									emailaddressesOthers.push(infoSup.getValue(iu, 1)); 
 								}
 
 							}
@@ -866,13 +871,21 @@ function process_richiesta_permessi(event, fs)
 					
 					// compilazione campo 'gestitoda' con indicazione dei nominativi di chi gestirà la richiesta
 					globals.ma_sec_removeUsersFilters();
+					
 					/** @type {String} */
 					var gestitoDa = '';
-					for (var gd = 0; gd < emailaddresses.length; gd++) {
-						gestitoDa += globals.getUserName(emailaddresses[gd][0]);
-						if (gd != emailaddresses.length - 1)
+					
+					if(bAutoApprovazione)
+					   gestitoDa = _to_sec_user$user_id.user_id ? globals.getUserName(_to_sec_user$user_id.user_id) : security.getUserName();
+					else
+					{
+					   for (var gd = 0; gd < emailaddresses.length; gd++) {
+						  gestitoDa += globals.getUserName(emailaddresses[gd][0]);
+						  if (gd != emailaddresses.length - 1)
 							gestitoDa += ',';
+						}		   
 					}
+					
 					databaseManager.startTransaction();
 					newTesta.gestitoda = gestitoDa;
 					databaseManager.commitTransaction();
@@ -1102,24 +1115,32 @@ function process_richiesta_permessi(event, fs)
 					/** @type {String} */
 					var gestitoDaResp = '';
 					var arrGestitoDa = [];
+					
 					globals.ma_sec_removeUsersFilters();
-					for (var gdArrResp = 0; gdArrResp < emailaddresses.length; gdArrResp++) {
-						// evitando l'eventuale user id del lavoratore per il quale si sta inserendo una richiesta
-						if (emailaddresses[gdArrResp][0] != globals.getUserIdFromIdLavoratore(vIdLavoratore, globals.svy_sec_lgn_owner_id))
-							arrGestitoDa.push(emailaddresses[gdArrResp]);
+					
+					if(bAutoApprovazione)
+					   gestitoDaResp = _to_sec_user$user_id.user_id ? globals.getUserName(_to_sec_user$user_id.user_id) : security.getUserName();
+					else
+					{						
+						for (var gdArrResp = 0; gdArrResp < emailaddresses.length; gdArrResp++) {
+							// evitando l'eventuale user id del lavoratore per il quale si sta inserendo una richiesta
+							if (emailaddresses[gdArrResp][0] != globals.getUserIdFromIdLavoratore(vIdLavoratore, globals.svy_sec_lgn_owner_id))
+								arrGestitoDa.push(emailaddresses[gdArrResp]);
+						}
+	
+						for (var gdResp = 0; gdResp < arrGestitoDa.length; gdResp++) {
+							gestitoDaResp += globals.getUserName(arrGestitoDa[gdResp][0]);
+							if (gdResp != arrGestitoDa.length - 1)
+								gestitoDaResp += ',';
+						}
 					}
-
-					for (var gdResp = 0; gdResp < arrGestitoDa.length; gdResp++) {
-						gestitoDaResp += globals.getUserName(arrGestitoDa[gdResp][0]);
-						if (gdResp != arrGestitoDa.length - 1)
-							gestitoDaResp += ',';
-					}
-
+					
 					databaseManager.startTransaction();
 					newTesta.gestitoda = gestitoDaResp;
 					databaseManager.commitTransaction();
+									
 					globals.ma_sec_setUsersFilters();
-					
+														
 					// gestione della fase di invio della mail (se necessario)
 					if(invioMail)
 					{
@@ -1219,7 +1240,9 @@ function process_richiesta_permessi(event, fs)
 									null,
 									null,
 									null,
-									globals.setSparkPostSmtpProperties()))
+									globals.setSparkPostSmtpProperties()
+								)
+								)
 								{
 									// non è stato possibile creare il testo della mail, reinviarla dall'elenco richieste 
 									var msgErrMailCr = 'Si è verificato un errore durante la creazione e l\'invio della mail al/i responsabile/i. Controllare se la richiesta sia stata comunque inserita.\n';
