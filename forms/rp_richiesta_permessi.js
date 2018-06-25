@@ -542,6 +542,9 @@ function process_richiesta_permessi(event, fs)
 	{
 		var numGiorni = fs.getSize();
 		
+		// verifica possesso modulo comunicazioni
+		var hasModuleCom = globals.ma_utl_hasModule(globals.Module.COMUNICAZIONI);
+		
 		// verifica richieste precedenti già inserite
 		var bloccaInserimento = false;
 		var msg = "Esistono le seguenti richieste già inserite per il dipendente nei giorni indicati: <br/>"
@@ -833,19 +836,15 @@ function process_richiesta_permessi(event, fs)
 							}
 						}
 					} else {
-						livAut = globals.getDeltaLivelloAutorizzazione(globals.svy_sec_lgn_user_org_id,
-							globals.svy_sec_lgn_user_id,
-							_to_sec_user$user_id.sec_user_to_sec_user_org.sec_user_org_to_sec_user_in_group.sec_user_in_group_to_sec_group.group_id);
+						livAut = 1; //globals.getDeltaLivelloAutorizzazione(globals.svy_sec_lgn_user_org_id, globals.svy_sec_lgn_user_id, _to_sec_user$user_id.sec_user_to_sec_user_org.sec_user_org_to_sec_user_in_group.sec_user_in_group_to_sec_group.group_id);
 
 						// recupero del/i corretto/i indirizzo/i mail a cui inviare l'avviso di avvenuto inserimento di richiesta
 						infoSup = globals.getInfoUsersLivelliSuperiori(globals.svy_sec_lgn_user_org_id);
 
 						for (var iu = 1; iu <= infoSup.getMaxRowIndex(); iu++) {
 							if (infoSup.getValue(iu, 1) != _to_sec_user$user_id.user_id) {
-								// se 1- il livello superiore rientra negli n livelli di profondità a cui cercare (di default il livello è pari a 1,
-								//      altrimenti è indicato dal possesso delle chiavi del tipo RICHIESTA_PERMESSI_n_LIV)
-								//    2- l'utente di questa organizzazione non è per qualche motivo inibito alla ricezione della mail di avvenuto
-								//      inserimento della nuova richiesta
+								// se l'utente di questa organizzazione non è per qualche motivo inibito alla ricezione della mail di avvenuto
+								// inserimento della nuova richiesta
 								// aggiungi il suo indirizzo all'array di indirizzi a cui mandare l'avviso
 								if (infoSup.getValue(iu, 5) <= livAut && !globals.ma_utl_userHasKey(infoSup.getValue(iu, 1), scIdMailSuperiore, infoSup.getValue(iu, 6), infoSup.getValue(iu, 4))) {
 									infoTuple = [infoSup.getValue(iu, 1), infoSup.getValue(iu, 3), infoSup.getValue(iu, 5), infoSup.getValue(iu, 4)];
@@ -898,7 +897,7 @@ function process_richiesta_permessi(event, fs)
 							// costruzione intestazione e testo mail
 							var subject = (bSubjectNom ? globals.getNominativo(vIdLavoratore) + " - " : "") + "Comunicazione nuova richiesta ferie e permessi - Presenza Semplice Studio Miazzo";
 							var subjectEn = "Advice for new request - Presenza Semplice Studio Miazzo";
-							var msgText = "plain msg<html>";
+							var msgText = "<html>";
 							msgText += "<head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"></head>";
 							msgText += "<body>";
 							var msgTextEn = msgText; //'<i>English version : </i><br/><p style = "font-size:14px">';
@@ -964,13 +963,14 @@ function process_richiesta_permessi(event, fs)
 									msgTextEn += "<br/><br/>Alternatively you can go to the <a href='https://webapp.studiomiazzo.it/login.html'>application</a> to handle the requests."
 								}
 
-								//							msgTextEn += '</p>';
+								// msgTextEn += '</p>';
 								msgTextEn += "</body></html>";
 								msgText += "</body></html>";
 
 								// english language
 								var englishLang = globals.ma_utl_userHasKey(emailaddresses[e][0],scIdEnglishLang);
 
+								// invio effettivo della mail
 								if (!plugins.mail.sendMail
 								(emailaddresses[e][1],
 									'Ferie e permessi <assistenza@studiomiazzo.it>',
@@ -988,6 +988,14 @@ function process_richiesta_permessi(event, fs)
 									msgErrMail += 'ERRORE : ' + plugins.mail.getLastSendMailExceptionMsg();
 									throw new Error(msgErrMail);
 								}
+								
+								// inserimento messaggio in tabella (MA_Communication) 
+								if(hasModuleCom)
+									scopes.message.createMessage(emailaddresses[e][0],
+										                         englishLang ? subjectEn : subject,  
+										                         englishLang ? msgTextEn : msgText,
+										                         globals.Module.FERIE_PERMESSI,
+																 _to_sec_user$user_id.user_id);								
 							} else
 								globals.ma_utl_showWarningDialog(emailaddresses[e][1] + ' : ' + 'i18n:ma.msg.notValidEmailAddress', 'Comunicazione gestione richiesta');
 						}
@@ -1151,7 +1159,7 @@ function process_richiesta_permessi(event, fs)
 								// costruzione intestazione e testo mail
 								var subjectCr = (bSubjectNom ? globals.getNominativo(vIdLavoratore) + " - " : "") + "Comunicazione nuova richiesta ferie e permessi - Presenza Semplice Studio Miazzo";
 								var subjectCrEn = "Advice for new request - Presenza Semplice Studio Miazzo";
-								var msgTextCr = "plain msg<html>";
+								var msgTextCr = "<html>";
 								msgTextCr += "<head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"></head>";
 								msgTextCr += "<body>";
 								var msgTextCrEn = msgTextCr; //"<i>English version : </i><br/><p style = \"font-size\":8px>";
@@ -1251,6 +1259,15 @@ function process_richiesta_permessi(event, fs)
 									msgErrMailCr += 'ERRORE : ' + plugins.mail.getLastSendMailExceptionMsg();
 									throw new Error(msgErrMailCr);
 								}
+								
+								// inserimento messaggio in tabella (MA_Communication)
+								if(hasModuleCom)
+									scopes.message.createMessage(emailaddresses[m][0],
+										                         englishLangCr ? subjectCrEn : subjectCr,
+										                         englishLangCr ? msgTextCrEn : msgTextCr,
+										                         globals.Module.FERIE_PERMESSI,
+										                         _to_sec_user$user_id.user_id);
+								
 							} else
 								globals.ma_utl_showWarningDialog(emailaddresses[m][1] + ' : ' + 'i18n:ma.msg.notValidEmailAddress', 'Comunicazione gestione richiesta');
 						}
@@ -1323,7 +1340,8 @@ function refreshRichieste(event)
  *
  * @properties={typeid:24,uuid:"EEB0DAF7-E949-46DD-ACC7-88E2640187E8"}
  */
-function onShowForm(_firstShow, _event) {
+function onShowForm(_firstShow, _event) 
+{
 	plugins.busy.prepare();
 
 	_super.onShowForm(_firstShow, _event);
@@ -1336,8 +1354,6 @@ function onShowForm(_firstShow, _event) {
 
 	// disabilitiamo il salvataggio automatico
 	databaseManager.setAutoSave(false);
-
-	//databaseManager.startTransaction();
 
 }
 
