@@ -664,12 +664,12 @@ function validaParameters()
 		globals.ma_utl_showWarningDialog('Selezionare un dipendente o deselezionare il filtro sul dipendente','Elenco richieste');
 	    return false;
 	}
-	if(frmFtr.vChkSedeDiLavoro && !frmFtr.vIdSede)
+	if(frmFtr.vChkSedeDiLavoro && frmFtr.vArrIdSede.length == 0)
 	{
 		globals.ma_utl_showWarningDialog('Selezionare una sede o deselezionare il filtro sulla sede di lavoro','Elenco richieste');
 	    return false;
 	}
-	if(frmFtr.vChkCentroDiCosto && !frmFtr.vCodCentroDiCosto)
+	if(frmFtr.vChkCentroDiCosto && frmFtr.vArrCodCentroDiCosto.length == 0)
 	{
 		globals.ma_utl_showWarningDialog('Selezionare un centro di costo o deselezionare il filtro sul centro di costo','Elenco richieste');
 	    return false;
@@ -957,7 +957,7 @@ function onRenderVC_Turni(event)
 	var _rec = event.getRecord();
 	var _recRen = event.getRenderable();
     var _name = _recRen.getName();
-    if(_name)
+    if(_name && _rec)
     {
     	/** @type {String}*/
     	var value = _rec[utils.stringRight(_name,_name.length -4)];
@@ -2384,197 +2384,189 @@ function inviaMailRichiestaEsistente(rec)
 	var emailaddressesRefuse = [];
 	var emailaddressesOthers = [];
 	
-	// gestione della stringa oggetto della mail a seconda del parametro impostato
-	var bSubjectNom = false;
-	switch (globals.getParameterValue(idDitta, 'NOE')) {
-	case 'NOM': // il nominativo del richiedente comparirà nell'oggetto della mail
-		bSubjectNom = true;
-		break;
-	case 'STD':
-		bSubjectNom = false;
-		break;
-	default:
-		break;
-	}
-
-	// gestione dell'invio mail di avvenuto inserimento di una nuova richiesta al gestore oppure nel caso
-	// del gestore stesso che inserisce richieste per i suoi subordinati, al relativo subordinato
-	var scIdMailSuperiore = globals.ma_utl_getSecurityKeyId(globals.Key.NON_INVIARE_MAIL);
-	
-	// gestione eventuale utilizzo lingua inglese
-	var scIdEnglishLang = globals.ma_utl_getSecurityKeyId(globals.Key.ENGLISH_LAN);
-	
-	// determinazione dell'eventuale gap dei livelli per l'autorizzazione della gestione
-	var livAut = 0;
-
-	idUser = globals.svy_sec_lgn_organization_id;
-	fsRpGroupsInfo = globals.getRpGroupsInfo(idUser);
-	fsRpUsersInfo = globals.getRpUsersInfo(idUser);
-	
-	if (fsRpGroupsInfo || fsRpUsersInfo) {
-		if (fsRpGroupsInfo) {
-			for (var gr = 1; gr <= fsRpGroupsInfo.getSize(); gr++) {
-				var users = globals.getOrganizationUsers(fsRpGroupsInfo.getRecord(gr).rp_group_id.toString());
-				for (var au = 0; au < users.length; au++) {
-					infoTuple = [users[au], globals.getMailUtente(users[au]), 1000];
-					if (fsRpGroupsInfo.getRecord(gr).gestione_richiesta)
-						emailaddresses.push(infoTuple);
-					if (fsRpGroupsInfo.getRecord(gr).avviso_conferma && users[au] != idUser && emailaddressesConfirm.indexOf(users[au]) == -1)
-						emailaddressesConfirm.push(users[au]);
-					if (fsRpGroupsInfo.getRecord(gr).avviso_rifiuto && users[au] != idUser && emailaddressesRefuse.indexOf(users[au]) == -1)
-						emailaddressesRefuse.push(users[au]);
-					if (users[au] != globals.svy_sec_lgn_user_id && emailaddressesOthers.indexOf(users[au]) == -1 && emailaddressesConfirm.indexOf(users[au]) == -1 && emailaddressesRefuse.indexOf(users[au]) == -1
-					)
-						emailaddressesOthers.push(users[au]);
-				}
-			}
+	try
+	{
+		// gestione della stringa oggetto della mail a seconda del parametro impostato
+		var bSubjectNom = false;
+		switch (globals.getParameterValue(idDitta, 'NOE')) {
+		case 'NOM': // il nominativo del richiedente comparirà nell'oggetto della mail
+			bSubjectNom = true;
+			break;
+		case 'STD':
+			bSubjectNom = false;
+			break;
+		default:
+			break;
 		}
-
-		if (fsRpUsersInfo) {
-			for (var us = 1; us <= fsRpUsersInfo.getSize(); us++) {
-				infoTuple = [fsRpUsersInfo.getRecord(us).rp_user_id,
-				globals.getMailUtente(fsRpUsersInfo.getRecord(us).rp_user_id), 1000];
-				if (fsRpUsersInfo.getRecord(us).gestione_richiesta)
-					emailaddresses.push(infoTuple);
-				if (fsRpUsersInfo.getRecord(us).avviso_conferma && fsRpUsersInfo.getRecord(us).rp_user_id != idUser && emailaddressesConfirm.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1)
-					emailaddressesConfirm.push(fsRpUsersInfo.getRecord(us).rp_user_id);
-				if (fsRpUsersInfo.getRecord(us).avviso_rifiuto && fsRpUsersInfo.getRecord(us).rp_user_id != idUser && emailaddressesRefuse.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1)
-					emailaddressesRefuse.push(fsRpUsersInfo.getRecord(us).rp_user_id);
-				if (fsRpUsersInfo.getRecord(us).rp_user_id != idUser && emailaddressesOthers.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1 && emailaddressesConfirm.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1 && emailaddressesRefuse.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1)
-					emailaddressesOthers.push(fsRpUsersInfo.getRecord(us).rp_user_id);
-			}
-		}
-	} else {
-// TODO gestione caso generale gruppi		
-//		var userGroupId;
-//		var userGroups = globals.getUserGroups(idUser);
-//		if(userGroups.getMaxRowIndex() != 1)
-//		{
-//			//TODO
-//			globals.ma_utl_showWarningDialog('Più gruppi di appartenenza definiti per l\'utente, definire quale si desidera...');
-//	    	return;
-//		}
-//		else
-//			userGroupId = userGroups.getValue(1,1);
-		var userGroupId = _to_sec_user$user_id.sec_user_to_sec_user_org.sec_user_org_to_sec_user_in_group.sec_user_in_group_to_sec_group.group_id;
-		livAut = globals.getDeltaLivelloAutorizzazione(idUser,
-													   idUser,
-													   userGroupId);
-
-		// recupero del/i corretto/i indirizzo/i mail a cui inviare l'avviso di avvenuto inserimento di richiesta
-		infoSup = globals.getInfoUsersLivelliSuperiori(globals.svy_sec_lgn_user_org_id);
-
-		for (var iu = 1; iu <= infoSup.getMaxRowIndex(); iu++) {
-			if (infoSup.getValue(iu, 1) != _to_sec_user$user_id.user_id) {
-				// se 1- il livello superiore rientra negli n livelli di profondità a cui cercare (di default il livello è pari a 1,
-				//      altrimenti è indicato dal possesso delle chiavi del tipo RICHIESTA_PERMESSI_n_LIV)
-				//    2- l'utente di questa organizzazione non è per qualche motivo inibito alla ricezione della mail di avvenuto
-				//      inserimento della nuova richiesta
-				// aggiungi il suo indirizzo all'array di indirizzi a cui mandare l'avviso
-				if (infoSup.getValue(iu, 5) <= livAut && !globals.ma_utl_userHasKey(infoSup.getValue(iu, 1), scIdMailSuperiore, infoSup.getValue(iu, 6), infoSup.getValue(iu, 4))) {
-					infoTuple = [infoSup.getValue(iu, 1), infoSup.getValue(iu, 3), infoSup.getValue(iu, 5), infoSup.getValue(iu, 4)];
-					emailaddresses.push(infoTuple);
-					emailaddressesOthers.push(infoSup.getValue(iu, 1)); //TODO
-				}
-
-			}
-		}
-	}
 	
-	// invio mail gestori richiesta
-	for (var e = 0; e < emailaddresses.length; e++) {
-		// costruzione intestazione e testo mail
-		var subject = (bSubjectNom ? globals.getNominativo(idLavoratore) + " - " : "") + "Comunicazione presenza richiesta ferie e permessi - Presenza Semplice Studio Miazzo";
-		var subjectEn = "Advice for request - Presenza Semplice Studio Miazzo";
-		var msgText = "plain msg<html>";
-		msgText += "<head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"></head>";
-		msgText += "<body>";
-		var msgTextEn = msgText; 
+		// gestione dell'invio mail di avvenuto inserimento di una nuova richiesta al gestore oppure nel caso
+		// del gestore stesso che inserisce richieste per i suoi subordinati, al relativo subordinato
+		var scIdMailSuperiore = globals.ma_utl_getSecurityKeyId(globals.Key.NON_INVIARE_MAIL);
 		
-		// link per il servizio di gestione richiesta con restful web service
-		var url = globals.RfpServerLink +  
-		          "/rp_servlet?idgiustificativotesta=" + idLavoratoreGiustificativoTesta + 
-				  "&cliente=" + globals.customer_dbserver_name + 
-				  "&operatore=" + emailaddresses[e][0] + 
-				  "&wsurl=" + globals.WS_RFP_URL + 
-				  "&userid=" + _to_sec_user$user_id.user_id + 
-				  "&othersid=" + emailaddressesOthers.join(',') + 
-				  "&confirmsid=" + emailaddressesConfirm.join(',') + 
-				  "&refusesid=" + emailaddressesRefuse.join(',');
-
-		if (emailaddresses[e] && plugins.mail.isValidEmailAddress(emailaddresses[e][1])) {
-			msgText += "Gentile <b>" + globals.getUserName(emailaddresses[e][0]) + "</b>, <br/> con la presente le comunichiamo la presenza di una richiesta di ";
-			msgTextEn += "Dear <b>" + globals.getUserName(emailaddresses[e][0]) + "</b>, <br/> we inform you that there is a request of <i>" + globals.getDescrizioneEvento(rec.lavoratori_giustificativitesta_to_lavoratori_giustificativirighe.idevento) + " ";
-
-			msgText += '<i>' + globals.getDescrizioneEvento(rec.lavoratori_giustificativitesta_to_lavoratori_giustificativirighe.idevento) + '</i>';
-
-			msgText += " da parte del" + (isFemmina ? "la" : "") + " dipendente <b>" + globals.getNominativo(idLavoratore) + '</b>';
-			msgTextEn += " by <b>" + globals.getNominativo(idLavoratore) + '</b>';
-
-			var vDal = rec.giorno_dal;
-			var vAl = rec.giorno_al;
-			
-			if (vDal == vAl) {
-				msgText += (" relativa al giorno <b>" + utils.dateFormat(vDal, globals.EU_DATEFORMAT)) + '</b>';
-				msgTextEn += (" on the day <b>" + utils.dateFormat(vDal, globals.EU_DATEFORMAT)) + '</b>';
-
-				if (!rec.lavoratori_giustificativitesta_to_lavoratori_giustificativirighe.giornointero) {
-					msgText += " dalle ore " + utils.dateFormat(rec.lavoratori_giustificativitesta_to_lavoratori_giustificativirighe.dalleore, globals.OREMINUTI_DATEFORMAT);
-					msgTextEn += " since " + utils.dateFormat(rec.lavoratori_giustificativitesta_to_lavoratori_giustificativirighe.dalleore, globals.OREMINUTI_DATEFORMAT);
-
-					msgText += " alle ore " + utils.dateFormat(rec.lavoratori_giustificativitesta_to_lavoratori_giustificativirighe.alleore, globals.OREMINUTI_DATEFORMAT);
-					msgTextEn += " until " + utils.dateFormat(rec.lavoratori_giustificativitesta_to_lavoratori_giustificativirighe.alleore, globals.OREMINUTI_DATEFORMAT);
+		// gestione eventuale utilizzo lingua inglese
+		var scIdEnglishLang = globals.ma_utl_getSecurityKeyId(globals.Key.ENGLISH_LAN);
+		
+		// determinazione dell'eventuale gap dei livelli per l'autorizzazione della gestione
+		var livAut = 0;
+	
+		idUser = globals.svy_sec_lgn_organization_id;
+		fsRpGroupsInfo = globals.getRpGroupsInfo(idUser);
+		fsRpUsersInfo = globals.getRpUsersInfo(idUser);
+		
+		if (fsRpGroupsInfo || fsRpUsersInfo) {
+			if (fsRpGroupsInfo) {
+				for (var gr = 1; gr <= fsRpGroupsInfo.getSize(); gr++) {
+					var users = globals.getOrganizationUsers(fsRpGroupsInfo.getRecord(gr).rp_group_id.toString());
+					for (var au = 0; au < users.length; au++) {
+						infoTuple = [users[au], globals.getMailUtente(users[au]), 1000];
+						if (fsRpGroupsInfo.getRecord(gr).gestione_richiesta)
+							emailaddresses.push(infoTuple);
+						if (fsRpGroupsInfo.getRecord(gr).avviso_conferma && users[au] != idUser && emailaddressesConfirm.indexOf(users[au]) == -1)
+							emailaddressesConfirm.push(users[au]);
+						if (fsRpGroupsInfo.getRecord(gr).avviso_rifiuto && users[au] != idUser && emailaddressesRefuse.indexOf(users[au]) == -1)
+							emailaddressesRefuse.push(users[au]);
+						if (users[au] != globals.svy_sec_lgn_user_id && emailaddressesOthers.indexOf(users[au]) == -1 && emailaddressesConfirm.indexOf(users[au]) == -1 && emailaddressesRefuse.indexOf(users[au]) == -1
+						)
+							emailaddressesOthers.push(users[au]);
+					}
 				}
-				msgText += ". <br/>";
-				msgTextEn += ". <br/>";
-			} else {
-				msgText += (" relativa al periodo che va dalla data <b>" + utils.dateFormat(vDal, globals.EU_DATEFORMAT) + "</b> alla data <b>" + utils.dateFormat(vAl, globals.EU_DATEFORMAT) + "</b>. <br/>");
-				msgTextEn += (" since <b>" + utils.dateFormat(vDal, globals.EU_DATEFORMAT) + "</b> until <b>" + utils.dateFormat(vAl, globals.EU_DATEFORMAT) + "</b>. <br/>");
 			}
-
-			msgText += '<br/>';
-			msgTextEn += '<br/>';
-
-			if (rec.note != null && rec.note != '') {
-				msgText += 'Note della richiesta : ' + '<i>' + rec.note + '</i>';
-				msgTextEn += 'Additional notes : ' + '<i>' + rec.note + '</i>';
+	
+			if (fsRpUsersInfo) {
+				for (var us = 1; us <= fsRpUsersInfo.getSize(); us++) {
+					infoTuple = [fsRpUsersInfo.getRecord(us).rp_user_id,
+					globals.getMailUtente(fsRpUsersInfo.getRecord(us).rp_user_id), 1000];
+					if (fsRpUsersInfo.getRecord(us).gestione_richiesta)
+						emailaddresses.push(infoTuple);
+					if (fsRpUsersInfo.getRecord(us).avviso_conferma && fsRpUsersInfo.getRecord(us).rp_user_id != idUser && emailaddressesConfirm.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1)
+						emailaddressesConfirm.push(fsRpUsersInfo.getRecord(us).rp_user_id);
+					if (fsRpUsersInfo.getRecord(us).avviso_rifiuto && fsRpUsersInfo.getRecord(us).rp_user_id != idUser && emailaddressesRefuse.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1)
+						emailaddressesRefuse.push(fsRpUsersInfo.getRecord(us).rp_user_id);
+					if (fsRpUsersInfo.getRecord(us).rp_user_id != idUser && emailaddressesOthers.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1 && emailaddressesConfirm.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1 && emailaddressesRefuse.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1)
+						emailaddressesOthers.push(fsRpUsersInfo.getRecord(us).rp_user_id);
+				}
 			}
-
-			msgText += '<br/><br/>';
-			msgTextEn += '<br/><br/>';
-
-			if ((emailaddresses[e][2] == 1000 || (livAut != undefined && emailaddresses[e][2] == livAut))) {
-				msgText += '<a href= ' + url + "&status=1" + '>Confermare richiesta</a>';
+		} else {
+			livAut = 1; 
+			
+			// recupero del/i corretto/i indirizzo/i mail a cui inviare l'avviso di avvenuto inserimento di richiesta
+			infoSup = globals.getInfoUsersLivelliSuperiori(globals.svy_sec_lgn_user_org_id);
+	
+			for (var iu = 1; iu <= infoSup.getMaxRowIndex(); iu++) {
+				if (infoSup.getValue(iu, 1) != _to_sec_user$user_id.user_id) {
+					// se l'utente di questa organizzazione non è per qualche motivo inibito alla ricezione della mail di avvenuto
+					// inserimento della nuova richiesta
+					// aggiungi il suo indirizzo all'array di indirizzi a cui mandare l'avviso
+					if (infoSup.getValue(iu, 5) <= livAut && !globals.ma_utl_userHasKey(infoSup.getValue(iu, 1), scIdMailSuperiore, infoSup.getValue(iu, 6), infoSup.getValue(iu, 4))) {
+						infoTuple = [infoSup.getValue(iu, 1), infoSup.getValue(iu, 3), infoSup.getValue(iu, 5), infoSup.getValue(iu, 4)];
+						emailaddresses.push(infoTuple);
+						emailaddressesOthers.push(infoSup.getValue(iu, 1)); 
+					}
+	
+				}
+			}
+		}
+		
+		// invio mail gestori richiesta
+		for (var e = 0; e < emailaddresses.length; e++) {
+			// costruzione intestazione e testo mail
+			var subject = (bSubjectNom ? globals.getNominativo(idLavoratore) + " - " : "") + "Comunicazione presenza richiesta ferie e permessi - Presenza Semplice Studio Miazzo";
+			var subjectEn = "Advice for request - Presenza Semplice Studio Miazzo";
+			var msgText = "plain msg<html>";
+			msgText += "<head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"></head>";
+			msgText += "<body>";
+			var msgTextEn = msgText; 
+			
+			// link per il servizio di gestione richiesta con restful web service
+			var url = globals.RfpServerLink +  
+			          "/rp_servlet?idgiustificativotesta=" + idLavoratoreGiustificativoTesta + 
+					  "&cliente=" + globals.customer_dbserver_name + 
+					  "&operatore=" + emailaddresses[e][0] + 
+					  "&wsurl=" + globals.WS_RFP_URL + 
+					  "&userid=" + _to_sec_user$user_id.user_id + 
+					  "&othersid=" + emailaddressesOthers.join(',') + 
+					  "&confirmsid=" + emailaddressesConfirm.join(',') + 
+					  "&refusesid=" + emailaddressesRefuse.join(',');
+	
+			if (emailaddresses[e] && plugins.mail.isValidEmailAddress(emailaddresses[e][1])) {
+				msgText += "Gentile <b>" + globals.getUserName(emailaddresses[e][0]) + "</b>, <br/> con la presente le comunichiamo la presenza di una richiesta di ";
+				msgTextEn += "Dear <b>" + globals.getUserName(emailaddresses[e][0]) + "</b>, <br/> we inform you that there is a request of <i>" + globals.getDescrizioneEvento(rec.lavoratori_giustificativitesta_to_lavoratori_giustificativirighe.idevento) + " ";
+	
+				msgText += '<i>' + globals.getDescrizioneEvento(rec.lavoratori_giustificativitesta_to_lavoratori_giustificativirighe.idevento) + '</i>';
+	
+				msgText += " da parte del" + (isFemmina ? "la" : "") + " dipendente <b>" + globals.getNominativo(idLavoratore) + '</b>';
+				msgTextEn += " by <b>" + globals.getNominativo(idLavoratore) + '</b>';
+	
+				var vDal = rec.giorno_dal;
+				var vAl = rec.giorno_al;
+				
+				if (vDal == vAl) {
+					msgText += (" relativa al giorno <b>" + utils.dateFormat(vDal, globals.EU_DATEFORMAT)) + '</b>';
+					msgTextEn += (" on the day <b>" + utils.dateFormat(vDal, globals.EU_DATEFORMAT)) + '</b>';
+	
+					if (!rec.lavoratori_giustificativitesta_to_lavoratori_giustificativirighe.giornointero) {
+						msgText += " dalle ore " + utils.dateFormat(rec.lavoratori_giustificativitesta_to_lavoratori_giustificativirighe.dalleore, globals.OREMINUTI_DATEFORMAT);
+						msgTextEn += " since " + utils.dateFormat(rec.lavoratori_giustificativitesta_to_lavoratori_giustificativirighe.dalleore, globals.OREMINUTI_DATEFORMAT);
+	
+						msgText += " alle ore " + utils.dateFormat(rec.lavoratori_giustificativitesta_to_lavoratori_giustificativirighe.alleore, globals.OREMINUTI_DATEFORMAT);
+						msgTextEn += " until " + utils.dateFormat(rec.lavoratori_giustificativitesta_to_lavoratori_giustificativirighe.alleore, globals.OREMINUTI_DATEFORMAT);
+					}
+					msgText += ". <br/>";
+					msgTextEn += ". <br/>";
+				} else {
+					msgText += (" relativa al periodo che va dalla data <b>" + utils.dateFormat(vDal, globals.EU_DATEFORMAT) + "</b> alla data <b>" + utils.dateFormat(vAl, globals.EU_DATEFORMAT) + "</b>. <br/>");
+					msgTextEn += (" since <b>" + utils.dateFormat(vDal, globals.EU_DATEFORMAT) + "</b> until <b>" + utils.dateFormat(vAl, globals.EU_DATEFORMAT) + "</b>. <br/>");
+				}
+	
 				msgText += '<br/>';
-				msgText += '<a href=' + url + "&status=2" + '>Rifiutare richiesta</a>';
-				msgText += "<br/><br/>In alternativa collegarsi all\'<a href='https://webapp.studiomiazzo.it/login.html'>applicazione</a> per la gestione delle richieste."
-
-				msgTextEn += '<a href= ' + url + "&status=1" + '>Confirm request</a>';
 				msgTextEn += '<br/>';
-				msgTextEn += '<a href=' + url + "&status=2" + '>Refuse request</a>';
-				msgTextEn += "<br/><br/>Alternatively you can go to the <a href='https://webapp.studiomiazzo.it/login.html'>application</a> to handle the requests."
-			}
-
-			//							msgTextEn += '</p>';
-			msgTextEn += "</body></html>";
-			msgText += "</body></html>";
-
-			// english language
-			var englishLang = globals.ma_utl_userHasKey(emailaddresses[e][0],scIdEnglishLang);
-
-			if (!plugins.mail.sendMail
-										(emailaddresses[e][1],
-										'Ferie e permessi <assistenza@studiomiazzo.it>',
-										englishLang ? subjectEn : subject,
-										englishLang ? msgTextEn : msgText,
-										null,
-										null,
-										null,
-										globals.setSparkPostSmtpProperties()))
-				globals.ma_utl_showWarningDialog(plugins.mail.getLastSendMailExceptionMsg(), 'Comunicazione gestione richiesta');
-			else
-                globals.ma_utl_showWarningDialog('Inoltro della comunicazione avvenuto correttamente!','Comunicazione gestione richiesta');
-		} else
-			globals.ma_utl_showWarningDialog(emailaddresses[e][1] + ' : ' + 'i18n:ma.msg.notValidEmailAddress', 'Comunicazione gestione richiesta');
+	
+				if (rec.note != null && rec.note != '') {
+					msgText += 'Note della richiesta : ' + '<i>' + rec.note + '</i>';
+					msgTextEn += 'Additional notes : ' + '<i>' + rec.note + '</i>';
+				}
+	
+				msgText += '<br/><br/>';
+				msgTextEn += '<br/><br/>';
+	
+				if ((emailaddresses[e][2] == 1000 || (livAut != undefined && emailaddresses[e][2] == livAut))) {
+					msgText += '<a href= ' + url + "&status=1" + '>Confermare richiesta</a>';
+					msgText += '<br/>';
+					msgText += '<a href=' + url + "&status=2" + '>Rifiutare richiesta</a>';
+					msgText += "<br/><br/>In alternativa collegarsi all\'<a href='https://webapp.studiomiazzo.it/login.html'>applicazione</a> per la gestione delle richieste."
+	
+					msgTextEn += '<a href= ' + url + "&status=1" + '>Confirm request</a>';
+					msgTextEn += '<br/>';
+					msgTextEn += '<a href=' + url + "&status=2" + '>Refuse request</a>';
+					msgTextEn += "<br/><br/>Alternatively you can go to the <a href='https://webapp.studiomiazzo.it/login.html'>application</a> to handle the requests."
+				}
+	
+				//							msgTextEn += '</p>';
+				msgTextEn += "</body></html>";
+				msgText += "</body></html>";
+	
+				// english language
+				var englishLang = globals.ma_utl_userHasKey(emailaddresses[e][0],scIdEnglishLang);
+	
+				if (!plugins.mail.sendMail
+											(emailaddresses[e][1],
+											'Ferie e permessi <assistenza@studiomiazzo.it>',
+											englishLang ? subjectEn : subject,
+											englishLang ? msgTextEn : msgText,
+											null,
+											null,
+											null,
+											globals.setSparkPostSmtpProperties()))
+					globals.ma_utl_showWarningDialog(plugins.mail.getLastSendMailExceptionMsg(), 'Comunicazione gestione richiesta');
+				else
+	                globals.ma_utl_showWarningDialog('Inoltro della comunicazione avvenuto correttamente!','Comunicazione gestione richiesta');
+			} else
+				globals.ma_utl_showWarningDialog(emailaddresses[e][1] + ' : ' + 'i18n:ma.msg.notValidEmailAddress', 'Comunicazione gestione richiesta');
+		}
 	}
+	catch (ex)
+	{
+		application.output(ex.message, LOGGINGLEVEL.ERROR);
+	    ex.message != '' ? globals.ma_utl_showErrorDialog(ex.message) : globals.ma_utl_showErrorDialog('Verificare in elenco l\'avvenuto inserimento della richiesta.\nLa mail di notifica potrebbe non essere stata generata ed inoltrata al gestore.\nSe la richiesta non è presente,provare a rieffettuare l\'inserimento o contattare il servizio di assistenza dello Studio e comunicare l\'anomalia.');
+    } 
 }
