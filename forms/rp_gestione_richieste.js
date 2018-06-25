@@ -50,7 +50,6 @@ function dc_edit(_event,_triggerForm,_forceForm)
 
 			globals.ma_utl_setStatus(globals.Status.EDIT, frm.controller.getName());
 			globals.ma_utl_showFormInDialog(frm.controller.getName(), 'Richiesta permessi');
-
 		}
 	}
 	else

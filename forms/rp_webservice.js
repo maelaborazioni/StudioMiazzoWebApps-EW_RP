@@ -250,6 +250,8 @@ function gestisciRichiestaWS(clientDb, idgiustificativotesta, operatore_id, stat
 															   confirms_id,
 															   refuses_id
 															   );
+							
+														
 	                        return 200;
 	
 						} else

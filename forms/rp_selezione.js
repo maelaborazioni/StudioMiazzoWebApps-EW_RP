@@ -13,7 +13,8 @@ function onDataChangeDitta(oldValue, newValue, event) {
 	var _foundset = databaseManager.getFoundSet(globals.nav.program['LEAF_Lkp_Ditte'].server_name,
 												globals.nav.program['LEAF_Lkp_Ditte'].table_name)
 			
-	_foundset.addFoundSetFilterParam('ditte_to_ditte_presenze.ore_gestioneepi2', '=', 1);
+	var arrDitteEpi = globals.getDitteGestiteEpi2();
+	_foundset.addFoundSetFilterParam('idditta','IN',arrDitteEpi);
 	_foundset.addFoundSetFilterParam('codice', '=', newValue)
 	_foundset.loadAllRecords()
 	
