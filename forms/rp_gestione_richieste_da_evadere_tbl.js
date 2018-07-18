@@ -215,12 +215,27 @@ function filterRichiesteDaConfermare(fs)
  */
 function gestisciRichiestaDaEvadere(idgiustificativotesta,status,frmName)
 {
-    if (forms[frmName].foundset.selectRecord(idgiustificativotesta))
-    {
-    	var invioMail = globals.ma_utl_showYesNoQuestion('Inviare una mail per informare il/i dipendenti?','Invia mail di gestione richiesta');
-		globals.gestisciRichiesta(idgiustificativotesta,status,invioMail)
-
-    }
+	try
+	{
+	    if (forms[frmName].foundset.selectRecord(idgiustificativotesta))
+	    {
+	    	var idLavoratore = globals.getLavoratoreFromGiustificativo(idgiustificativotesta);
+	    	var userId = globals.getUserIdFromIdLavoratore(idLavoratore,globals.svy_sec_lgn_owner_id);
+	    	
+	    	if(userId == null)
+	    		throw new Error('Non è stato possibile identificare l\'utente specifico. Contattare il servizio di assistenza dello Studio');
+	    	
+	    	var invioMail = userId
+			                && !globals.ma_utl_userHasKey(userId,
+	    		                                       globals.ma_utl_getSecurityKeyId(globals.Key.NON_INVIARE_MAIL)) 
+			                && globals.ma_utl_showYesNoQuestion('Inviare una mail per informare il dipendente?','Invia mail di gestione richiesta');globals.ma_utl_showYesNoQuestion('Inviare una mail per informare il/i dipendenti?','Invia mail di gestione richiesta');
+		 	globals.gestisciRichiesta(idgiustificativotesta,status,invioMail);
+	    }
+	}
+	catch(ex)
+	{
+		globals.ma_utl_showErrorDialog(ex.message,'Gestisci richiesta');
+	}
 }
 /**
  * Perform sort.

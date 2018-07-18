@@ -68,7 +68,7 @@ function annullaRichiestaEvento(event)
  */
 function aggiornaSelezioneEventoDaAlbero(returnDataProvider, tableName, mouseX, mouseY){
 	
-	/** @type {JSFoundset<db:/ma_presenze/e2eventi>} */    
+	/** @type {JSFoundSet<db:/ma_presenze/e2eventi>} */    
     var eventiFs = databaseManager.getFoundSet(globals.Server.MA_PRESENZE,globals.Table.EVENTI);
     
     if(eventiFs.find())
@@ -225,7 +225,7 @@ function FiltraProprietaRicSelezionabili(idEvento)
  */
 function confermaSelezioneEventoDaAlbero(_idevento)
 {
-	/** @type {JSFoundset<db:/ma_presenze/e2eventi>} */    
+	/** @type {JSFoundSet<db:/ma_presenze/e2eventi>} */    
     var eventiFs = databaseManager.getFoundSet(globals.Server.MA_PRESENZE,'e2eventi');
     
     if(eventiFs.find())
@@ -283,7 +283,7 @@ function onDataChangeEventoRP(oldValue, newValue, event) {
 	globals.FiltraEventiSelezionabiliModulo(forms.rp_richiesta_permessi.vIdLavoratore,globals.CategoriaSW.RFP);
 	//globals.FiltraEventiSelezionabiliRP();
 	
-	/** @type {JSFoundset<db:/ma_presenze/e2eventi>} */
+	/** @type {JSFoundSet<db:/ma_presenze/e2eventi>} */
 	var _foundset = databaseManager.getFoundSet(globals.Server.MA_PRESENZE,
 		                                        globals.Table.EVENTI);
 

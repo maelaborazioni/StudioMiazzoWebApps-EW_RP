@@ -152,7 +152,7 @@ function onActionConferma(event)
 		if(vIdTabGiustificativoParametroValore == null)
 			throw new Error('Nessun valore selezionato per il parametro desiderato');
 			
-		/** @type {JSFoundset<db:/ma_anagrafiche/ditte_giustificativiparametri>}*/
+		/** @type {JSFoundSet<db:/ma_anagrafiche/ditte_giustificativiparametri>}*/
 		var fs = databaseManager.getFoundSet(globals.Server.MA_ANAGRAFICHE,globals.Table.DITTE_GIUSTIFICATIVI_PARAMETRI);
 				
 		// nel caso di modifica di un parametro esistente

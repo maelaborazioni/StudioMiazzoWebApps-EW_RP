@@ -76,7 +76,7 @@ function verificaStampaSituazioneRichieste()
  */
 function confermaStampaSituazioneRichieste(event) 
 {
-	/** @type {JSFoundset<db:/ma_anagrafiche/lavoratori>} */
+	/** @type {JSFoundSet<db:/ma_anagrafiche/lavoratori>} */
 	var fsDipendenti = databaseManager.getFoundSet(globals.Server.MA_ANAGRAFICHE,globals.Table.LAVORATORI);
 	if(fsDipendenti.find())
 	{

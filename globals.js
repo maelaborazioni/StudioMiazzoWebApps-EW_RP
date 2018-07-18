@@ -413,7 +413,7 @@ function ApriER(_rec)
 		_filter.filter_field_name = 'idlavoratore';
 		_filter.filter_operator = 'IN';
 		
-		/** @type {JSFoundset<db:/ma_anagrafiche/lavoratori>}*/
+		/** @type {JSFoundSet<db:/ma_anagrafiche/lavoratori>}*/
 		var fs = databaseManager.getFoundSet(globals.Server.MA_ANAGRAFICHE,globals.Table.LAVORATORI);
 	    
 		if(_rec != null)
@@ -542,7 +542,7 @@ function refreshElenco(event,daEvadere,order)
 	               
        fs.find();
        
-       /** @type {JSFoundset<db:/ma_anagrafiche/lavoratori>}*/
+       /** @type {JSFoundSet<db:/ma_anagrafiche/lavoratori>}*/
        var fsLav = databaseManager.getFoundSet(globals.Server.MA_ANAGRAFICHE,globals.Table.LAVORATORI);
    	   fsLav.loadAllRecords();
    	   var arrLav = globals.foundsetToArray(fsLav,'idlavoratore');
@@ -589,7 +589,7 @@ function refreshElenco(event,daEvadere,order)
     			}
     			else
     			{
-    				/** @type {JSFoundset<db:/svy_framework/sec_user_right>}*/
+    				/** @type {JSFoundSet<db:/svy_framework/sec_user_right>}*/
     				var fsUserRight = databaseManager.getFoundSet(globals.Server.SVY_FRAMEWORK, 'sec_user_right');
     				
     				if (fsUserRight.find())
@@ -598,7 +598,7 @@ function refreshElenco(event,daEvadere,order)
     					fsUserRight.sec_user_right_to_sec_security_key.is_client = 1;
     					if (fsUserRight.search()) 
     					{
-    						/** @type {JSFoundset<db:/ma_framework/v_sec_filtrilavoratori>} */
+    						/** @type {JSFoundSet<db:/ma_framework/v_sec_filtrilavoratori>} */
     						var fsSecLavoratori = databaseManager.getFoundSet(globals.Server.MA_FRAMEWORK, 'v_sec_filtrilavoratori');
     						if (fsSecLavoratori.find()) 
     						{
@@ -707,7 +707,7 @@ function validaParameters()
  */
 function gestisciRichiesta(idgiustificativotesta, status, inviaMail, noteRisposta)
 {
-	/** @type {JSFoundset<db:/ma_anagrafiche/lavoratori_giustificativitesta>}*/
+	/** @type {JSFoundSet<db:/ma_anagrafiche/lavoratori_giustificativitesta>}*/
 	var fs = databaseManager.getFoundSet(globals.Server.MA_ANAGRAFICHE,globals.Table.RP_TESTA);
 	if(fs.find())
 	{
@@ -788,7 +788,7 @@ function gestisciRichiesta(idgiustificativotesta, status, inviaMail, noteRispost
 //							{								
 //						    	// ottenimento informazioni sulla fascia per verifica orari inseriti
 //								var objInfoFascia = globals.ottieniInformazioniFasciaGiorno(rec.idlavoratore, recRiga.giorno);
-//						    	/** @type {JSFoundset<db:/ma_presenze/e2giornalieraprogfasce>} */
+//						    	/** @type {JSFoundSet<db:/ma_presenze/e2giornalieraprogfasce>} */
 //								var fsFasceProg = databaseManager.getFoundSet(globals.Server.MA_PRESENZE,globals.Table.GIORNALIERA_PROGFASCE);
 //								databaseManager.startTransaction();
 //								
@@ -1357,7 +1357,7 @@ function calcCoperturaGiorno(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,_e
  */
 function vaiAllaGiornaliera(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,_event,_idGiornalieraEventi)
 {
-	/**  @type {JSFoundset<db:/ma_presenze/e2giornalieraeventi>}*/
+	/**  @type {JSFoundSet<db:/ma_presenze/e2giornalieraeventi>}*/
 	var fs = databaseManager.getFoundSet(globals.Server.MA_PRESENZE,globals.Table.GIORNALIERA_EVENTI);
 	if(fs.find())
 	{
@@ -1423,7 +1423,7 @@ function vaiAllaGiornalieraDip(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,
  */
 function portaInGiornalieraNormale(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,_event, _idGiornalieraEventi)
 {
-	/**  @type {JSFoundset<db:/ma_presenze/e2giornalieraeventi>}*/
+	/**  @type {JSFoundSet<db:/ma_presenze/e2giornalieraeventi>}*/
 	var fs = databaseManager.getFoundSet(globals.Server.MA_PRESENZE,globals.Table.GIORNALIERA_EVENTI);
 	if(fs.find())
 	{
@@ -1459,7 +1459,7 @@ function portaInGiornalieraNormale(_itemInd, _parItem, _isSel, _parMenTxt, _menu
  */
 function eliminaEventoBudget(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,_event, _idGiornalieraEventi)
 {
-	/**  @type {JSFoundset<db:/ma_presenze/e2giornalieraeventi>}*/
+	/**  @type {JSFoundSet<db:/ma_presenze/e2giornalieraeventi>}*/
 	var fs = databaseManager.getFoundSet(globals.Server.MA_PRESENZE,globals.Table.GIORNALIERA_EVENTI);
 	if(fs.find())
 	{
@@ -1534,37 +1534,50 @@ function eliminaEventoBudget(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,_e
  */
 function portaInGiornalieraBudget(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,_event,_idGiustificativoRiga)
 {
-	/** @type {JSFoundset<db:/ma_anagrafiche/lavoratori_giustificativirighe>}*/
-	var fs = databaseManager.getFoundSet(globals.Server.MA_ANAGRAFICHE,'lavoratori_giustificativirighe');
-	if(fs.find())
+	try
 	{
-		fs.idlavoratoregiustificativorighe = _idGiustificativoRiga;
-		if(fs.search())
-		{	
-		   var invioMail = !globals.ma_utl_hasKey(globals.Key.NON_INVIARE_MAIL);
-		   if(invioMail)
-			   globals.ma_utl_showYesNoQuestion('Inviare una mail per informare il/i dipendenti?','Invia mail di gestione richiesta');	
-		   gestisciRichiesta(fs.idlavoratoregiustificativotesta,1,invioMail);
-		   var paramsCopAss = {
-		        processFunction: process_refresh_copertura_assenze,
-		        message: '', 
-		        opacity: 0.5,
-		        paneColor: '#434343',
-		        textColor: '#EC1C24',
-		        showCancelButton: false,
-		        cancelButtonText: '',
-		        dialogName : 'This is the dialog',
-		        fontType: 'Arial,4,35',
-		        processArgs: [new JSEvent]
-		    };
-			plugins.busy.block(paramsCopAss);
+		/** @type {JSFoundSet<db:/ma_anagrafiche/lavoratori_giustificativirighe>}*/
+		var fs = databaseManager.getFoundSet(globals.Server.MA_ANAGRAFICHE,'lavoratori_giustificativirighe');
+		if(fs.find())
+		{
+			fs.idlavoratoregiustificativorighe = _idGiustificativoRiga;
+			if(fs.search())
+			{	
+				var idLavoratore = globals.getLavoratoreFromGiustificativo(fs.idlavoratoregiustificativotesta);
+		    	var userId = globals.getUserIdFromIdLavoratore(idLavoratore,globals.svy_sec_lgn_owner_id);
+		    	
+		    	if(userId == null)
+		    		throw new Error('Non è stato possibile identificare l\'utente specifico. Contattare il servizio di assistenza dello Studio');
+		    	
+		    	var invioMail = userId
+				                && !globals.ma_utl_userHasKey(userId,
+		    		                                       globals.ma_utl_getSecurityKeyId(globals.Key.NON_INVIARE_MAIL)) 
+				                && globals.ma_utl_showYesNoQuestion('Inviare una mail per informare il dipendente?','Invia mail di gestione richiesta');globals.ma_utl_showYesNoQuestion('Inviare una mail per informare il/i dipendenti?','Invia mail di gestione richiesta')
+			   gestisciRichiesta(fs.idlavoratoregiustificativotesta,1,invioMail);
+			   var paramsCopAss = {
+			        processFunction: process_refresh_copertura_assenze,
+			        message: '', 
+			        opacity: 0.5,
+			        paneColor: '#434343',
+			        textColor: '#EC1C24',
+			        showCancelButton: false,
+			        cancelButtonText: '',
+			        dialogName : 'This is the dialog',
+			        fontType: 'Arial,4,35',
+			        processArgs: [new JSEvent]
+			    };
+				plugins.busy.block(paramsCopAss);
+			}
+			else
+				throw new Error('Errore nel recupero delle informazioni sulla richiesta');
 		}
 		else
-			globals.ma_utl_showErrorDialog('Errore nel recupero delle informazioni sulla richiesta','Conferma richiesta in sospeso');
+			throw new Error('Cannot go to find mode');
+		}
+	catch(ex)
+	{
+		globals.ma_utl_showErrorDialog(ex.message,'Conferma richiesta in sospeso');
 	}
-	else
-		globals.ma_utl_showErrorDialog('Cannot go to find mode','Conferma richiesta in sospeso');
-	 
 }
 
 /**
@@ -1584,16 +1597,23 @@ function portaInGiornalieraBudget(_itemInd, _parItem, _isSel, _parMenTxt, _menuT
  */
 function rifiutaRichiesta(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,_event,_idGiustificativoRiga)
 {
-	/** @type {JSFoundset<db:/ma_anagrafiche/lavoratori_giustificativirighe>}*/
+	/** @type{JSFoundSet<db:/ma_anagrafiche/lavoratori_giustificativirighe>}*/
 	var fs = databaseManager.getFoundSet(globals.Server.MA_ANAGRAFICHE,'lavoratori_giustificativirighe');
 	if(fs.find())
 	{
 		fs.idlavoratoregiustificativorighe = _idGiustificativoRiga;
 		if(fs.search())
 		{	
-		   var invioMail = !globals.ma_utl_hasKey(globals.Key.NON_INVIARE_MAIL); 
-		   if(invioMail)
-		      invioMail = globals.ma_utl_showYesNoQuestion('Inviare una mail per informare il/i dipendenti?','Invia mail di gestione richiesta');	 
+			var idLavoratore = globals.getLavoratoreFromGiustificativo(fs.idlavoratoregiustificativotesta);
+	    	var userId = globals.getUserIdFromIdLavoratore(idLavoratore,globals.svy_sec_lgn_owner_id);
+	    	
+	    	if(userId == null)
+	    		throw new Error('Non è stato possibile identificare l\'utente specifico. Contattare il servizio di assistenza dello Studio');
+	    	
+	    	var invioMail = userId
+			                && !globals.ma_utl_userHasKey(userId,
+	    		                                       globals.ma_utl_getSecurityKeyId(globals.Key.NON_INVIARE_MAIL)) 
+			                && globals.ma_utl_showYesNoQuestion('Inviare una mail per informare il dipendente?','Invia mail di gestione richiesta');	 
 		   gestisciRichiesta(fs.idlavoratoregiustificativotesta,0,invioMail);
 		   var paramsCopAss = {
 		        processFunction: process_refresh_copertura_assenze,
@@ -1611,10 +1631,10 @@ function rifiutaRichiesta(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,_even
 
 		}
 		else
-			globals.ma_utl_showErrorDialog('Errore nel recupero delle informazioni sulla richiesta','Conferma richiesta in sospeso');
+			throw new Error('Errore nel recupero delle informazioni sulla richiesta','Conferma richiesta in sospeso');
 	}
 	else
-		globals.ma_utl_showErrorDialog('Cannot go to find mode','Conferma richiesta in sospeso');
+		throw new Error ('Cannot go to find mode','Conferma richiesta in sospeso');
 }
 
 /**
@@ -1634,7 +1654,7 @@ function rifiutaRichiesta(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,_even
 function eliminaRichiestaEvasa(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,event,idGiustificativoTesta)
 {
 	// recuperiamo le informazioni sui giorni relativi alla richiesta che si vuole revocare
-	/** @type {JSFoundset<db:/ma_anagrafiche/lavoratori_giustificativirighe>} */
+	/** @type {JSFoundSet<db:/ma_anagrafiche/lavoratori_giustificativirighe>} */
 	var fsRighe = databaseManager.getFoundSet(globals.Server.MA_ANAGRAFICHE,globals.Table.RP_RIGHE);
 	if(fsRighe.find())
 	{
@@ -1705,7 +1725,7 @@ function eliminaRichiestaEvasa(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,
     			}
     			
     			// salvataggio informazioni per eventuale mail di avviso al dipendente
-    			/** @type {JSFoundset<db:/ma_anagrafiche/lavoratori_giustificativitesta>} */
+    			/** @type {JSFoundSet<db:/ma_anagrafiche/lavoratori_giustificativitesta>} */
 			    var recTesta = recRiga.lavoratori_giustificativirighe_to_lavoratori_giustificativitesta;
 			    var idLavoratore = recRiga.idlavoratore;
     			var dalleOre = recTesta.lavoratori_giustificativitesta_to_lavoratori_giustificativirighe.dalleore;
@@ -1846,7 +1866,7 @@ function process_refresh_copertura_assenze(params)
  */
 function showInfoRichiesta(_itemInd,_parItem,_isSel,_parMenTxt,_menuTxt,_event,_idGiustificativoRiga)
 {
-	/** @type {JSFoundset<db:/ma_anagrafiche/lavoratori_giustificativirighe>}*/
+	/** @type {JSFoundSet<db:/ma_anagrafiche/lavoratori_giustificativirighe>}*/
 	var fsRighe = databaseManager.getFoundSet(globals.Server.MA_ANAGRAFICHE,'lavoratori_giustificativirighe');
 	if(fsRighe.find())
 	{
@@ -1889,11 +1909,24 @@ function filterRichiesteDaConfermare(fs)
  */
 function updateMultiploStatoRichiesta(arrRichieste)
 {
-	var invioMail = globals.ma_utl_showYesNoQuestion('Inviare una mail per informare il/i dipendenti?','Invia mail di gestione richiesta');
+	var invioMail = globals.ma_utl_showYesNoQuestion('Inviare una mail per informare il/i dipendenti che \
+	                                                  hanno l\'impostazione attiva?','Invia mail di gestione richiesta');
 	
-	for(var i=0; i<arrRichieste.length; i++)
+	for(var i = 0; i < arrRichieste.length; i++)
+	{
+		var idLavoratore = globals.getLavoratoreFromGiustificativo(arrRichieste[i]);
+		var userId = globals.getUserIdFromIdLavoratore(idLavoratore,globals.svy_sec_lgn_owner_id);
+    	
+    	if(userId == null)
+    		throw new Error('Non è stato possibile identificare l\'utente specifico. Contattare il servizio di assistenza dello Studio');
+    	
+    	invioMail = userId
+		                && !globals.ma_utl_userHasKey(userId,
+    		                                       globals.ma_utl_getSecurityKeyId(globals.Key.NON_INVIARE_MAIL)) 
+		                && globals.ma_utl_showYesNoQuestion('Inviare una mail per informare il dipendente?','Invia mail di gestione richiesta');globals.ma_utl_showYesNoQuestion('Inviare una mail per informare il/i dipendenti?','Invia mail di gestione richiesta');
 		globals.gestisciRichiesta(arrRichieste[i],1,invioMail);
-		
+	}	
+	
 	globals.refreshElenco(new JSEvent,true);
 }
 
@@ -1944,31 +1977,46 @@ function confermaMultipla(_itemInd,_parItem,_isSel,_parMenTxt,_menuTxt,event)
  */
 function updateStatoRichiesta(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,event,status) 
 {
-	var frmName = event.getFormName();
-	var noteAggiuntive = false;
-	
-	/** @type {Number} */
-	var id = forms[frmName].foundset.getSelectedRecord()['idlavoratoregiustificativotesta'];
-	
-	var invioMail = !globals.ma_utl_hasKey(globals.Key.NON_INVIARE_MAIL) 
-	                && globals.ma_utl_showYesNoQuestion('Inviare una mail per informare il dipendente?','Invia mail di gestione richiesta');
-	
-	// inserimento eventuale nota relativa alla gestione della richiesta
-	if(invioMail)
-	   noteAggiuntive = globals.ma_utl_showYesNoQuestion('Vuoi aggiungere delle note aggiuntive da comunicare al dipendente?','Invia mail di gestione richiesta');
-	
-	if(noteAggiuntive)
+	try
 	{
-		var frm = forms.rp_note_risposta_richiesta;
-		frm.idRichiesta = id;
-		frm.statoRichiesta = status;
-		frm.noteRichiesta = '';
-		globals.ma_utl_showFormInDialog(frm.controller.getName(),'Note aggiuntive alla gestione della richiesta');
+		var frmName = event.getFormName();
+		var noteAggiuntive = false;
+		
+		/** @type {Number} */
+		var id = forms[frmName].foundset.getSelectedRecord()['idlavoratoregiustificativotesta'];
+		
+		var idLavoratore = globals.getLavoratoreFromGiustificativo(id);
+		var userId = globals.getUserIdFromIdLavoratore(idLavoratore,globals.svy_sec_lgn_owner_id);
+		
+		if(userId == null)
+			throw new Error('Non è stato possibile identificare l\'utente specifico. Contattare il servizio di assistenza dello Studio');
+		
+		var invioMail = userId
+		                && !globals.ma_utl_userHasKey(userId,
+			                                       globals.ma_utl_getSecurityKeyId(globals.Key.NON_INVIARE_MAIL)) 
+		                && globals.ma_utl_showYesNoQuestion('Inviare una mail per informare il dipendente?','Invia mail di gestione richiesta');
+		
+		// inserimento eventuale nota relativa alla gestione della richiesta
+		if(invioMail)
+		   noteAggiuntive = globals.ma_utl_showYesNoQuestion('Vuoi aggiungere delle note aggiuntive da comunicare al dipendente?','Invia mail di gestione richiesta');
+		
+		if(noteAggiuntive)
+		{
+			var frm = forms.rp_note_risposta_richiesta;
+			frm.idRichiesta = id;
+			frm.statoRichiesta = status;
+			frm.noteRichiesta = '';
+			globals.ma_utl_showFormInDialog(frm.controller.getName(),'Note aggiuntive alla gestione della richiesta');
+		}
+		else
+		{
+			globals.gestisciRichiesta(id, status, invioMail);
+			globals.refreshElenco(event, true);
+		}
 	}
-	else
+	catch (ex)
 	{
-		globals.gestisciRichiesta(id, status, invioMail);
-		globals.refreshElenco(event, true);
+		globals.ma_utl_showErrorDialog(ex.message,'Gestisci richiesta');
 	}
 }
 
@@ -2569,4 +2617,27 @@ function inviaMailRichiestaEsistente(rec)
 		application.output(ex.message, LOGGINGLEVEL.ERROR);
 	    ex.message != '' ? globals.ma_utl_showErrorDialog(ex.message) : globals.ma_utl_showErrorDialog('Verificare in elenco l\'avvenuto inserimento della richiesta.\nLa mail di notifica potrebbe non essere stata generata ed inoltrata al gestore.\nSe la richiesta non è presente,provare a rieffettuare l\'inserimento o contattare il servizio di assistenza dello Studio e comunicare l\'anomalia.');
     } 
+}
+
+/**
+ * Restituisce l'identificativo del lavoratore a partire dall'identificativo della richiesta
+ *  
+ * @param {Number} idLavoratoreGiustificativoTesta
+ * @return {Number}
+ * @AllowToRunInFind
+ *
+ * @properties={typeid:24,uuid:"D4F82CCC-C7B3-49B4-AE0A-6CC7E2B133B7"}
+ */
+function getLavoratoreFromGiustificativo(idLavoratoreGiustificativoTesta)
+{
+	/** @type {JSFoundSet<db:/ma_anagrafiche/lavoratori_giustificativitesta>}*/
+	var fs = databaseManager.getFoundSet(globals.Server.MA_ANAGRAFICHE,globals.Table.RP_TESTA);
+	if(fs.find())
+	{
+		fs.idlavoratoregiustificativotesta = idLavoratoreGiustificativoTesta;
+		if(fs.search())
+			return fs.idlavoratore;
+	}
+	
+	return null;
 }

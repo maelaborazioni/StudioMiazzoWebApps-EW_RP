@@ -548,7 +548,7 @@ function process_richiesta_permessi(event, fs)
 		// verifica richieste precedenti già inserite
 		var bloccaInserimento = false;
 		var msg = "Esistono le seguenti richieste già inserite per il dipendente nei giorni indicati: <br/>"
-		/** @type {JSFoundset<db:/ma_anagrafiche/lavoratori_giustificativirighe>}*/
+		/** @type {JSFoundSet<db:/ma_anagrafiche/lavoratori_giustificativirighe>}*/
 		var fsPrec = globals.ottieniRichiesteDalAl(vIdLavoratore, vDal, vAl);
 		if (fsPrec) {
 			for (var g = 1; g <= fsPrec.getSize(); g++) {
@@ -599,7 +599,7 @@ function process_richiesta_permessi(event, fs)
 		
 		databaseManager.startTransaction();
 		
-		/** @type {JSFoundset<db:/ma_anagrafiche/lavoratori>}*/
+		/** @type {JSFoundSet<db:/ma_anagrafiche/lavoratori>}*/
 		var fsLav = databaseManager.getFoundSet(globals.Server.MA_ANAGRAFICHE, globals.Table.LAVORATORI);
 		if (fsLav.find()) {
 			fsLav.idlavoratore = vIdLavoratore;

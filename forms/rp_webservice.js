@@ -1,5 +1,4 @@
 /**
- * 
  * @properties={typeid:24,uuid:"CBECA4F3-6480-4830-8968-0082EA45B8A2"}
  */
 function ws_read() {
@@ -169,7 +168,7 @@ function gestisciRichiestaWS(clientDb, idgiustificativotesta, operatore_id, stat
 		if (!idDitta)
 			return 403;
 		
-		/** @type {JSFoundset<db:/ma_anagrafiche/lavoratori_giustificativitesta>}*/
+		/** @type {JSFoundSet<db:/ma_anagrafiche/lavoratori_giustificativitesta>}*/
 		var fs = databaseManager.getFoundSet(clientDb, globals.Table.RP_TESTA);
 		if (fs.find()) {
 			fs.idlavoratoregiustificativotesta = idgiustificativotesta;
@@ -191,7 +190,7 @@ function gestisciRichiestaWS(clientDb, idgiustificativotesta, operatore_id, stat
 					return 401;
 				} else {
 	
-					/** @type {JSFoundset<db:/ma_anagrafiche/lavoratori_giustificativirighe>}*/
+					/** @type {JSFoundSet<db:/ma_anagrafiche/lavoratori_giustificativirighe>}*/
 					var fsRighe = databaseManager.getFoundSet(clientDb, globals.Table.RP_RIGHE);
 					if (fsRighe.find()) {
 						fsRighe.idlavoratoregiustificativotesta = idgiustificativotesta;

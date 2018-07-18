@@ -35,7 +35,7 @@ function onShowForm(_firstShow, _event)
  */
 function confermaSelezioneEventoDaAlbero(idevento,bool)
 {
-	/** @type {JSFoundset<db:/ma_presenze/e2eventi>} */    
+	/** @type {JSFoundSet<db:/ma_presenze/e2eventi>} */    
     var eventiFs = databaseManager.getFoundSet(globals.Server.MA_PRESENZE,globals.Table.EVENTI);
     
     if(eventiFs.find())
@@ -152,7 +152,7 @@ function refreshTree_old()
 		
 	// recupero delle classi padre degli eventi ottenuti in precedenza 
 	var arrEvPadre = evDs.getColumnAsArray(8);
-	/** @type {JSFoundset<db:/ma_presenze/e2_eventipadre>} */    
+	/** @type {JSFoundSet<db:/ma_presenze/e2_eventipadre>} */    
     var categEvFs = databaseManager.getFoundSet(globals.Server.MA_PRESENZE,'e2_eventipadre');
 	if(categEvFs.find())
 	{

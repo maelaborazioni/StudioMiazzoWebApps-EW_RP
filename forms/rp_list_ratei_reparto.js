@@ -169,7 +169,7 @@ function preparaRateiReparto(idGroup,limitaAlGiorno,arrDipFiltrati)
     
     for (var i = currIndex; i < maxIndex; i++)
     {
-    	/** @type {JSFoundset<db:/ma_anagrafiche/lavoratori>} */
+    	/** @type {JSFoundSet<db:/ma_anagrafiche/lavoratori>} */
     	var fs = databaseManager.getFoundSet(globals.Server.MA_ANAGRAFICHE,globals.Table.LAVORATORI);
     	if(fs.find())
     	{
@@ -511,7 +511,7 @@ function refreshRateiReparto()
 		if(_to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori)
 			arrDipReparto.push(arrDipReparto.push(_to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori.idlavoratore));
 		
-		/** @type {JSFoundset<db:/ma_anagrafiche/lavoratori>}*/
+		/** @type {JSFoundSet<db:/ma_anagrafiche/lavoratori>}*/
 		var fs = databaseManager.getFoundSet(globals.Server.MA_ANAGRAFICHE,globals.Table.LAVORATORI);
 		fs.loadAllRecords();
 		fs.sort('lavoratori_to_persone.nominativo asc');
