@@ -210,6 +210,7 @@ function gestisciRichiestaWS(clientDb, idgiustificativotesta, operatore_id, stat
 									var recRiga = fsRighe.getRecord(i);
 									dalleOre = recRiga.dalleore;
 									alleOre = recRiga.alleore;
+									var propPredefEvento = globals.getProprietaPredefinitaEvento(recRiga.lavoratori_giustificativirighe_to_e2eventi.ideventoclasse);
 									var evParams = globals.inizializzaParametriEvento(idDitta,
 										recRiga.giorno.getFullYear() * 100 + recRiga.giorno.getMonth() + 1,
 										0,
@@ -218,7 +219,7 @@ function gestisciRichiestaWS(clientDb, idgiustificativotesta, operatore_id, stat
 										globals.TipoConnessione.CLIENTE,
 										[recRiga.idlavoratore],
 										recRiga.idevento,
-										recRiga.proprieta ? recRiga.proprieta : "",
+										propPredefEvento,
 										recRiga.giornointero == 0 ? recRiga.ore : 0, //verificare se giorno intero o meno
 										recRiga.importo,
 										-1,
