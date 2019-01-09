@@ -203,7 +203,7 @@ visible:false
 {
 location:"390,30",
 name:"btn_reload",
-onActionMethodID:"0EC135BC-3E79-4A32-98F6-FF5EE2686CFB",
+onActionMethodID:"91B0A3A4-A11C-486B-B960-2BB02AB4CB7C",
 rolloverCursor:12,
 showClick:false,
 size:"20,20",

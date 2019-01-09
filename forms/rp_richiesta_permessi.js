@@ -94,12 +94,13 @@ function refreshCalendario(event)
  * Perform the element default action.
  *
  * @param {JSEvent} event the event that triggered the action
- *
+ * @param {Boolean} [verificaFestivita]
+ * 
  * @properties={typeid:24,uuid:"0EC135BC-3E79-4A32-98F6-FF5EE2686CFB"}
  * @SuppressWarnings(unused)
  * @AllowToRunInFind
  */
-function process_refresh_calendario(event) {
+function process_refresh_calendario(event,verificaFestivita) {
 	try
 	{
 		if (vDal == null) throw new Error('Specificare il giorno iniziale della richiesta');
@@ -172,48 +173,51 @@ function process_refresh_calendario(event) {
 				arrPeriodi.push(currPeriodo);
 		}
 		
-		var idDitta = globals.getDitta(vIdLavoratore);
+		// verifica ed ignora i giorni festivi
 		var arrFestDip = [];
-		for(var p = 0; p < arrPeriodi.length; p++)
+		// caso solo festività standard
+		if(globals.ma_utl_hasModule(globals.Module.FESTIVITA_STANDARD))
+		   arrFestDip = globals.getFestivitaStandard();
+		// caso festività condizionata dipendente / periodo 
+		else
 		{
-			var url = globals.WS_RFP_URL + "/Trattamenti/RiepilogoFestivitaDittaPeriodoLavoratori";
-			var par = {
-				tipoconnessione : globals.TipoConnessione.CLIENTE,
-				databasecliente : globals.customer_dbserver_name,
-				periodo : arrPeriodi[p],
-				idditta : idDitta,
-				iddipendenti : [],
-				gruppolavoratori : ''
-				};
-			/** @type {{ returnValue: Boolean, riepilogoFestivita: Array<Array> }} */
-			var response = globals.getWebServiceResponse(url, par);
-			var arrRiepFestivita = response.riepilogoFestivita;
-		    
-			for(var f = 0; f < arrRiepFestivita.length; f++)
-	        {   
-	    	   if(arrRiepFestivita[f])
-	           {
-	        	   //  visualizziamo solamente le festività non accantonate che concorrono all'orario di riferimento
-	        	   var festivita = false;
-	    	       var vArrFesta = arrRiepFestivita[f][2];
-	    		   for(var j = 0; j < vArrFesta.length; j++)
-	    		   {
-	        		   if(utils.stringLeft(vArrFesta[j][2],2) != "FA")
-	        			   festivita = true;
-	        	   } 
-	        	           	   
-	        	   if(festivita && arrFestDip.indexOf(arrRiepFestivita[f][0]) == -1)
-	       	          arrFestDip.push(arrRiepFestivita[f][0]);
-	       	   }
-	        }
-			
-//			var arrFestDipPeriodo = globals.getFestivitaDipendente(globals.getDitta(vIdLavoratore),vIdLavoratore,arrPeriodi[p]);
-//			for(var afdp = 0; afdp < arrFestDipPeriodo.length; afdp++)
-//			{
-//				var fest = utils.stringTrim(arrPeriodi[p] * 100 + arrFestDipPeriodo[afdp]);
-//				if(arrFestDip.indexOf(fest) == -1)
-//					arrFestDip.push(fest);
-//			}
+			var idDitta = globals.getDitta(vIdLavoratore);
+			for(var p = 0; p < arrPeriodi.length; p++)
+			{
+				var url = globals.WS_RFP_URL + "/Trattamenti/RiepilogoFestivitaLavoratorePeriodo";
+				var par = {
+					tipoconnessione : globals.TipoConnessione.CLIENTE,
+					databasecliente : 'Cliente_' + globals.customer_dbserver_name,
+					periodo : arrPeriodi[p],
+					idditta : idDitta,
+					iddipendenti : [vIdLavoratore],
+					gruppolavoratori : ''
+					};
+				/** @type {{ returnValue: Boolean, riepilogoFestivita: Array<Array> }} */
+				var response = globals.getWebServiceResponse(url, par);
+				var arrRiepFestivita = response.riepilogoFestivita;
+			    
+				for(var f = 0; f < arrRiepFestivita.length; f++)
+		        {   
+		    	   if(arrRiepFestivita[f])
+		           {
+		        	   //  visualizziamo solamente le festività non accantonate che concorrono all'orario di riferimento
+		        	   var festivita = false;
+		    	       var vArrFesta = arrRiepFestivita[f][2];
+		    		   for(var j = 0; j < vArrFesta.length; j++)
+		    		   {
+		        		   if(vArrFesta[j][0] == vIdLavoratore 
+	        				   && utils.stringLeft(vArrFesta[j][2],2) != "FA"
+		        			   && arrFestDip.indexOf(arrRiepFestivita[f][0]) == -1)
+		        		   {
+		        			   festivita = true;
+		        			   arrFestDip.push(arrRiepFestivita[f][0]);
+		        			   break;
+		        		   }
+		        	   }	   	   
+		       	   }
+		        }						
+			}
 		}
 				
 		// ciclo sui giorni del periodo indicato in richiesta
@@ -223,7 +227,8 @@ function process_refresh_calendario(event) {
 	
 			var arr;
 			// per i giorni (teoricamente al momento della richiesta) lavorativi e non festivi aggiungiamo una riga al dataset provvisorio
-			if (arrFestDip.indexOf(globals.dateFormat(g,globals.ISO_DATEFORMAT)) == -1)
+			if (arrFestDip.length == 0 
+					|| arrFestDip.indexOf(globals.dateFormat(g,globals.ISO_DATEFORMAT)) == -1)
 			{
 				var infoFascia = globals.ottieniInformazioniFasciaGiorno(vIdLavoratore,g);		
 
@@ -353,7 +358,7 @@ function validaRichiesta(fs)
 			var recFasciaProg = scopes.giornaliera.getProgrammazioneFasceGiorno(vIdLavoratore,rec['giorno']);
 			if(recFasciaProg != null && festivita.indexOf(globals.dateFormat(rec['giorno'],globals.ISO_DATEFORMAT)) == -1)
 			{
-				globals.ma_utl_showWarningDialog(globals.getHtmlString('Esistono delle fasce precedentemente programmate per i giorni richiesti, non è possibile inserire la richiesta'), 'Validazione richiesta permessi');
+				globals.ma_utl_showWarningDialog(globals.getHtmlString('Esiste una fascia precedentemente programmata per il giorno ' + globals.dateFormat(rec['giorno'],globals.EU_DATEFORMAT) + ', non è possibile inserire la richiesta'), 'Validazione richiesta permessi');
 				return false;
 			}
 		}
@@ -565,7 +570,7 @@ function process_richiesta_permessi(event, fs)
 					// caso richiesta già confermata (se la richiesta è per tutta la giornata c'è il blocco sia
 					// che sia stata inserita dal gestore sia dal dipendente)
 					msg += 'CONFERMATA';
-					if (fsPrec.ore == 0)
+					if (fsPrec.giornointero == 1)
 						bloccaInserimento = true;
 					break;
 				case 2:
@@ -577,7 +582,9 @@ function process_richiesta_permessi(event, fs)
 				}
 				msg += " - il giorno " + globals.getNumGiorno(fsPrec.giorno) + ' ' + globals.getNomeMese(fsPrec.giorno.getMonth() + 1);
 				msg += " l\'evento " + fsPrec.lavoratori_giustificativirighe_to_e2eventi.evento_descrizione;
-				msg += fsPrec.ore != 0 ? " , ore " + fsPrec.ore : ' per l\'intera giornata';
+				msg += fsPrec.giornointero != 1 ? " , ore " + fsPrec.ore : ' per l\'intera giornata';
+				msg += fsPrec.giornointero != 1 ? "dalle " + globals.dateFormat(fsPrec.dalleore,globals.OREMINUTI_DATEFORMAT) 
+						                          + " alle " + globals.dateFormat(fsPrec.alleore, globals.OREMINUTI_DATEFORMAT) : "";
 				//	msg += " inserita il giorno " + fsPrec.lavoratori_giustificativirighe_to_lavoratori_giustificativitesta.datarichiesta
 				//	msg += " e approvata dall\'utente " + fsPrec.lavoratori_giustificativirighe_to_lavoratori_giustificativitesta.approvatoda;
 				msg += "<br/>"
@@ -658,7 +665,14 @@ function process_richiesta_permessi(event, fs)
 							break;
 						
 						}
-
+						
+						//  ticket 15004 per eventi di classe h0 con un numero di ore inserito > dell'orario teorico, considerare l'orario teorico
+						if(rec['oreevento'] > objInfoFascia.totaleorefascia / 100)
+						{
+							var tipoClasseEv = globals.getTipoClasseEvento(rec['idevento']);
+							if(tipoClasseEv == 'O')
+							   rec['oreevento'] = objInfoFascia.totaleorefascia / 100;
+						}
 					}
 					// inserimento del record relativo al giorno in giustificativi riga
 					var recRiga = newTesta.lavoratori_giustificativitesta_to_lavoratori_giustificativirighe.getRecord(newTesta.lavoratori_giustificativitesta_to_lavoratori_giustificativirighe.newRecord());//fsRiga.getRecord(fsRiga.newRecord(false));
@@ -713,10 +727,10 @@ function process_richiesta_permessi(event, fs)
 				
 				// gestione dell'impostazione di base per l'invio delle comunicazioni via mail
 				var invioMail = !globals.ma_utl_hasKey(globals.Key.NON_INVIARE_MAIL);
-							
+								
 				// gestione dell'invio mail di avvenuto inserimento di una nuova richiesta al gestore oppure nel caso
 				// del gestore stesso che inserisce richieste per i suoi subordinati, al relativo subordinato
-				var scIdMailSuperiore = globals.ma_utl_getSecurityKeyId(globals.Key.NON_INVIARE_MAIL);
+				var scIdNonRicezioneMail = globals.ma_utl_getSecurityKeyId(globals.Key.NON_RICEVERE_MAIL);
 				
 				// gestione eventuale utilizzo lingua inglese
 				var scIdEnglishLang = globals.ma_utl_getSecurityKeyId(globals.Key.ENGLISH_LAN);
@@ -728,9 +742,10 @@ function process_richiesta_permessi(event, fs)
 				var bAutoApprovazione = globals.ma_utl_hasKey(globals.Key.RICHIESTA_PERMESSI_AUTO_APPROVAZIONE);
 				
 				// variabile booleana per identificare se il gestore stia inserendo una richiesta per se stesso o meno
-				var bAutoRichiesta = vIsGestore ? (_to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori.idlavoratore == vIdLavoratore) : true;
+				var bAutoRichiesta = vIsGestore ? (_to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori != null
+						                           && _to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori.idlavoratore == vIdLavoratore) : true;
 				
-				// gestone autoapprovazione
+				// gestione autoapprovazione
 				if(!vIsGestore)
 				{
 					// gestione autoapprovazione caso utente
@@ -761,12 +776,8 @@ function process_richiesta_permessi(event, fs)
 						||	(vIsGestore 
 							&& !bAutoRichiesta 
 							&& solutionModel.getForm('rp_elenco_richieste_situazione')))
-//					{
 						globals.gestisciRichiesta(idLavoratoreGiustificativoTesta, 1, false);
-//					    plugins.busy.unblock();
-//						databaseManager.setAutoSave(false);
-//						return true;
-//					}
+
 				}
 								
 				var emailaddresses = [];
@@ -774,7 +785,12 @@ function process_richiesta_permessi(event, fs)
 				var emailaddressesOthers = [];
 				var emailaddressesConfirm = [];
 				var emailaddressesRefuse = [];
-
+                
+				/** @type {Array<Number>} */
+				var arrUserIdGestione = [];
+				/** @type {String} */
+				var gestitoDa = '';
+				
 				var infoSup
 				var infoTuple
 				var fsRpGroupsInfo
@@ -809,13 +825,27 @@ function process_richiesta_permessi(event, fs)
 								for (var au = 0; au < users.length; au++) {
 									infoTuple = [users[au], globals.getMailUtente(users[au]), 1000];
 									if (fsRpGroupsInfo.getRecord(gr).gestione_richiesta)
-										emailaddresses.push(infoTuple);
-									if (fsRpGroupsInfo.getRecord(gr).avviso_conferma && users[au] != globals.svy_sec_lgn_user_id && emailaddressesConfirm.indexOf(users[au]) == -1)
+									{										
+									    arrUserIdGestione.push(users[au]);
+									    if(!globals.ma_utl_userHasKey(users[au],scIdNonRicezioneMail))
+										  emailaddresses.push(infoTuple);
+									}
+									    
+									if (fsRpGroupsInfo.getRecord(gr).avviso_conferma 
+											&& users[au] != globals.svy_sec_lgn_user_id
+											&& emailaddressesConfirm.indexOf(users[au]) == -1
+											&& !globals.ma_utl_userHasKey(users[au],scIdNonRicezioneMail))
 										emailaddressesConfirm.push(users[au]);
-									if (fsRpGroupsInfo.getRecord(gr).avviso_rifiuto && users[au] != globals.svy_sec_lgn_user_id && emailaddressesRefuse.indexOf(users[au]) == -1)
+									if (fsRpGroupsInfo.getRecord(gr).avviso_rifiuto 
+											&& users[au] != globals.svy_sec_lgn_user_id 
+											&& emailaddressesRefuse.indexOf(users[au]) == -1
+											&& !globals.ma_utl_userHasKey(users[au],scIdNonRicezioneMail))
 										emailaddressesRefuse.push(users[au]);
-									if (users[au] != globals.svy_sec_lgn_user_id && emailaddressesOthers.indexOf(users[au]) == -1 && emailaddressesConfirm.indexOf(users[au]) == -1 && emailaddressesRefuse.indexOf(users[au]) == -1
-									)
+									if (users[au] != globals.svy_sec_lgn_user_id 
+											&& emailaddressesOthers.indexOf(users[au]) == -1 
+											&& emailaddressesConfirm.indexOf(users[au]) == -1 
+											&& emailaddressesRefuse.indexOf(users[au]) == -1
+											&& !globals.ma_utl_userHasKey(users[au],scIdNonRicezioneMail))
 										emailaddressesOthers.push(users[au]);
 								}
 							}
@@ -824,14 +854,29 @@ function process_richiesta_permessi(event, fs)
 						if (fsRpUsersInfo) {
 							for (var us = 1; us <= fsRpUsersInfo.getSize(); us++) {
 								infoTuple = [fsRpUsersInfo.getRecord(us).rp_user_id,
-								globals.getMailUtente(fsRpUsersInfo.getRecord(us).rp_user_id), 1000];
+											 globals.getMailUtente(fsRpUsersInfo.getRecord(us).rp_user_id),
+											 1000];
 								if (fsRpUsersInfo.getRecord(us).gestione_richiesta)
-									emailaddresses.push(infoTuple);
-								if (fsRpUsersInfo.getRecord(us).avviso_conferma && fsRpUsersInfo.getRecord(us).rp_user_id != globals.svy_sec_lgn_user_id && emailaddressesConfirm.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1)
+								{									
+									arrUserIdGestione.push(fsRpUsersInfo.getRecord(us).rp_user_id);
+									if(!globals.ma_utl_userHasKey(fsRpUsersInfo.getRecord(us).rp_user_id,scIdNonRicezioneMail))
+										  emailaddresses.push(infoTuple);
+								}
+								if (fsRpUsersInfo.getRecord(us).avviso_conferma 
+										&& fsRpUsersInfo.getRecord(us).rp_user_id != globals.svy_sec_lgn_user_id 
+										&& emailaddressesConfirm.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1
+										&& !globals.ma_utl_userHasKey(fsRpUsersInfo.getRecord(us).rp_user_id,scIdNonRicezioneMail))
 									emailaddressesConfirm.push(fsRpUsersInfo.getRecord(us).rp_user_id);
-								if (fsRpUsersInfo.getRecord(us).avviso_rifiuto && fsRpUsersInfo.getRecord(us).rp_user_id != globals.svy_sec_lgn_user_id && emailaddressesRefuse.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1)
+								if (fsRpUsersInfo.getRecord(us).avviso_rifiuto 
+										&& fsRpUsersInfo.getRecord(us).rp_user_id != globals.svy_sec_lgn_user_id 
+										&& emailaddressesRefuse.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1
+										&& !globals.ma_utl_userHasKey(fsRpUsersInfo.getRecord(us).rp_user_id,scIdNonRicezioneMail))
 									emailaddressesRefuse.push(fsRpUsersInfo.getRecord(us).rp_user_id);
-								if (fsRpUsersInfo.getRecord(us).rp_user_id != globals.svy_sec_lgn_user_id && emailaddressesOthers.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1 && emailaddressesConfirm.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1 && emailaddressesRefuse.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1)
+								if (fsRpUsersInfo.getRecord(us).rp_user_id != globals.svy_sec_lgn_user_id 
+										&& emailaddressesOthers.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1 
+										&& emailaddressesConfirm.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1 
+										&& emailaddressesRefuse.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1
+										&& !globals.ma_utl_userHasKey(fsRpUsersInfo.getRecord(us).rp_user_id,scIdNonRicezioneMail))
 									emailaddressesOthers.push(fsRpUsersInfo.getRecord(us).rp_user_id);
 							}
 						}
@@ -843,10 +888,19 @@ function process_richiesta_permessi(event, fs)
 
 						for (var iu = 1; iu <= infoSup.getMaxRowIndex(); iu++) {
 							if (infoSup.getValue(iu, 1) != _to_sec_user$user_id.user_id) {
+								// array user che hanno in carico la richiesta
+								if (infoSup.getValue(iu, 5) <= livAut)
+									arrUserIdGestione.push(infoSup.getValue(iu,1));
+								
 								// se l'utente di questa organizzazione non è per qualche motivo inibito alla ricezione della mail di avvenuto
 								// inserimento della nuova richiesta
 								// aggiungi il suo indirizzo all'array di indirizzi a cui mandare l'avviso
-								if (infoSup.getValue(iu, 5) <= livAut && !globals.ma_utl_userHasKey(infoSup.getValue(iu, 1), scIdMailSuperiore, infoSup.getValue(iu, 6), infoSup.getValue(iu, 4))) {
+								if (infoSup.getValue(iu, 5) <= livAut 
+										&& !globals.ma_utl_userHasKey(infoSup.getValue(iu, 1),
+																	  scIdNonRicezioneMail,
+																	  infoSup.getValue(iu, 6),
+																	  infoSup.getValue(iu, 4))) 
+								{
 									infoTuple = [infoSup.getValue(iu, 1), infoSup.getValue(iu, 3), infoSup.getValue(iu, 5), infoSup.getValue(iu, 4)];
 									emailaddresses.push(infoTuple);
 									emailaddressesOthers.push(infoSup.getValue(iu, 1)); 
@@ -870,16 +924,13 @@ function process_richiesta_permessi(event, fs)
 					
 					// compilazione campo 'gestitoda' con indicazione dei nominativi di chi gestirà la richiesta
 					globals.ma_sec_removeUsersFilters();
-					
-					/** @type {String} */
-					var gestitoDa = '';
-					
+										
 					if(bAutoApprovazione)
 					   gestitoDa = _to_sec_user$user_id.user_id ? globals.getUserName(_to_sec_user$user_id.user_id) : security.getUserName();
 					else
 					{
-					   for (var gd = 0; gd < emailaddresses.length; gd++) {
-						  gestitoDa += globals.getUserName(emailaddresses[gd][0]);
+					   for (var gd = 0; gd < arrUserIdGestione.length; gd++) {
+						  gestitoDa += globals.getUserName(arrUserIdGestione[gd]);
 						  if (gd != emailaddresses.length - 1)
 							gestitoDa += ',';
 						}		   
@@ -1023,8 +1074,6 @@ function process_richiesta_permessi(event, fs)
 							// altrimenti non è possibile identificarla in maniera univoca
 							else {
 								throw new Error('Impossibile identificare univocamente l\'organizzazione di appartenenza del dipendente : ' + globals.getNominativo(vIdLavoratore));
-//									globals.ma_utl_showInfoDialog('Impossibile identificare univocamente l\'organizzazione di appartenenza del dipendente : ' + globals.getNominativo(vIdLavoratore));
-//									return false;
 							}
 						}
 
@@ -1035,12 +1084,27 @@ function process_richiesta_permessi(event, fs)
 									for (var _au = 0; _au < _users.length; _au++) {
 										infoTuple = [_users[_au], globals.getMailUtente(_users[_au]), 1000];
 										if (fsRpGroupsInfo.getRecord(_gr).gestione_richiesta)
-											emailaddresses.push(infoTuple);
-										if (fsRpGroupsInfo.getRecord(_gr).avviso_conferma && _users[_au] != globals.svy_sec_lgn_user_id && emailaddressesConfirm.indexOf(_users[_au]) == -1)
+										{
+											arrUserIdGestione.push(_users[_au]);
+											if(!globals.ma_utl_userHasKey(_users[_au],scIdNonRicezioneMail))
+												  emailaddresses.push(infoTuple);											
+										}
+										if (fsRpGroupsInfo.getRecord(_gr).avviso_conferma 
+												&& _users[_au] != globals.svy_sec_lgn_user_id
+												&& emailaddressesConfirm.indexOf(_users[_au]) == -1
+												&& !globals.ma_utl_userHasKey(_users[_au],scIdNonRicezioneMail))
 											emailaddressesConfirm.push(_users[_au]);
-										if (fsRpGroupsInfo.getRecord(_gr).avviso_rifiuto && _users[_au] != globals.svy_sec_lgn_user_id && emailaddressesRefuse.indexOf(_users[_au]) == -1)
+										if (fsRpGroupsInfo.getRecord(_gr).avviso_rifiuto 
+												&& _users[_au] != globals.svy_sec_lgn_user_id 
+												&& emailaddressesRefuse.indexOf(_users[_au]) == -1
+												&& !globals.ma_utl_userHasKey(_users[_au],scIdNonRicezioneMail))
 											emailaddressesRefuse.push(_users[_au]);
-										if (_users[_au] != globals.svy_sec_lgn_user_id && emailaddresses.indexOf(_users[_au]) == -1 && emailaddressesConfirm.indexOf(_users[_au]) == -1 && emailaddressesRefuse.indexOf(_users[_au]) == -1 && emailaddressesOthers.indexOf(_users[_au]) == -1)
+										if (_users[_au] != globals.svy_sec_lgn_user_id 
+												&& emailaddresses.indexOf(_users[_au]) == -1 
+												&& emailaddressesConfirm.indexOf(_users[_au]) == -1 
+												&& emailaddressesRefuse.indexOf(_users[_au]) == -1 
+												&& emailaddressesOthers.indexOf(_users[_au]) == -1
+												&& !globals.ma_utl_userHasKey(_users[_au],scIdNonRicezioneMail))
 											emailaddressesOthers.push(_users[_au]);
 									}
 								}
@@ -1052,30 +1116,53 @@ function process_richiesta_permessi(event, fs)
 									infoTuple = [fsRpUsersInfo.getRecord(_us).rp_user_id,
 									             globals.getMailUtente(fsRpUsersInfo.getRecord(_us).rp_user_id), 1000];
 									if (fsRpUsersInfo.getRecord(_us).gestione_richiesta)
+									{										
+										arrUserIdGestione.push(fsRpUsersInfo.getRecord(_us).rp_user_id);
+										if(!globals.ma_utl_userHasKey(fsRpUsersInfo.getRecord(_us).rp_user_id,scIdNonRicezioneMail))
 										emailaddresses.push(infoTuple);
-									if (fsRpUsersInfo.getRecord(_us).avviso_conferma && fsRpUsersInfo.getRecord(_us).rp_user_id != globals.svy_sec_lgn_user_id && emailaddressesConfirm.indexOf(fsRpUsersInfo.getRecord(_us).rp_user_id) == -1)
+									}
+									if (fsRpUsersInfo.getRecord(_us).avviso_conferma 
+											&& fsRpUsersInfo.getRecord(_us).rp_user_id != globals.svy_sec_lgn_user_id 
+											&& emailaddressesConfirm.indexOf(fsRpUsersInfo.getRecord(_us).rp_user_id) == -1
+											&& !globals.ma_utl_userHasKey(fsRpUsersInfo.getRecord(_us).rp_user_id,scIdNonRicezioneMail))
 										emailaddressesConfirm.push(fsRpUsersInfo.getRecord(_us).rp_user_id);
-									if (fsRpUsersInfo.getRecord(_us).avviso_rifiuto && fsRpUsersInfo.getRecord(_us).rp_user_id != globals.svy_sec_lgn_user_id && emailaddressesRefuse.indexOf(fsRpUsersInfo.getRecord(_us).rp_user_id) == -1)
+									if (fsRpUsersInfo.getRecord(_us).avviso_rifiuto 
+											&& fsRpUsersInfo.getRecord(_us).rp_user_id != globals.svy_sec_lgn_user_id 
+											&& emailaddressesRefuse.indexOf(fsRpUsersInfo.getRecord(_us).rp_user_id) == -1
+											&& !globals.ma_utl_userHasKey(fsRpUsersInfo.getRecord(_us).rp_user_id,scIdNonRicezioneMail))
 										emailaddressesRefuse.push(fsRpUsersInfo.getRecord(_us).rp_user_id);
-									if (fsRpUsersInfo.getRecord(_us).rp_user_id != globals.svy_sec_lgn_user_id && emailaddresses.indexOf(fsRpUsersInfo.getRecord(_us).rp_user_id) == -1 && emailaddressesConfirm.indexOf(fsRpUsersInfo.getRecord(_us).rp_user_id) == -1 && emailaddressesRefuse.indexOf(fsRpUsersInfo.getRecord(_us).rp_user_id) == -1 && emailaddressesOthers.indexOf(fsRpUsersInfo.getRecord(_us).rp_user_id) == -1)
+									if (fsRpUsersInfo.getRecord(_us).rp_user_id != globals.svy_sec_lgn_user_id 
+											&& emailaddresses.indexOf(fsRpUsersInfo.getRecord(_us).rp_user_id) == -1 
+											&& emailaddressesConfirm.indexOf(fsRpUsersInfo.getRecord(_us).rp_user_id) == -1 
+											&& emailaddressesRefuse.indexOf(fsRpUsersInfo.getRecord(_us).rp_user_id) == -1 
+											&& emailaddressesOthers.indexOf(fsRpUsersInfo.getRecord(_us).rp_user_id) == -1
+											&& !globals.ma_utl_userHasKey(fsRpUsersInfo.getRecord(_us).rp_user_id,scIdNonRicezioneMail))
 										emailaddressesOthers.push(fsRpUsersInfo.getRecord(_us).rp_user_id);
 								}
 							}
 
 						} else {
 							// recupero del/i corretto/i indirizzo/i mail a cui inviare l'avviso di avvenuto inserimento di richiesta
-							livAut = globals.getDeltaLivelloAutorizzazione(globals.svy_sec_lgn_user_org_id,
-								globals.svy_sec_lgn_user_id,
-								_to_sec_user$user_id.sec_user_to_sec_user_org.sec_user_org_to_sec_user_in_group.sec_user_in_group_to_sec_group.group_id);
+							livAut = 1;
+//							    globals.getDeltaLivelloAutorizzazione(globals.svy_sec_lgn_user_org_id,
+//								globals.svy_sec_lgn_user_id,
+//								_to_sec_user$user_id.sec_user_to_sec_user_org.sec_user_org_to_sec_user_in_group.sec_user_in_group_to_sec_group.group_id);
 							var infoSupGest = globals.getInfoUsersLivelliSuperiori(globals.svy_sec_lgn_user_org_id);
 							for (var ig = 1; ig <= infoSupGest.getMaxRowIndex(); ig++) {
 								if (infoSupGest.getValue(ig, 1) != _to_sec_user$user_id.user_id && globals.ma_utl_getOwnerFromUserOrgId(infoSupGest.getValue(ig, 4)) == globals.svy_sec_lgn_owner_id) {
+									if (infoSupGest.getValue(ig, 5) <= livAut)
+										arrUserIdGestione.push(infoSupGest.getValue(ig,1));
 									// se 1- il livello superiore rientra negli n livelli di profondità a cui cercare (di default il livello è pari a 1,
 									//      altrimenti è indicato dal possesso delle chiavi del tipo RICHIESTA_PERMESSI_n_LIV)
 									//    2- l'utente di questa organizzazione non è per qualche motivo inibito alla ricezione della mail di avvenuto
 									//      inserimento della nuova richiesta
 									// aggiungi il suo indirizzo all'array di indirizzi a cui mandare l'avviso
-									if (infoSupGest.getValue(ig, 5) <= livAut && !globals.ma_utl_userHasKey(infoSupGest.getValue(ig, 1), scIdMailSuperiore, infoSupGest.getValue(ig, 6), infoSupGest.getValue(ig, 4))) {
+									if (infoSupGest.getValue(ig, 5) <= livAut 
+											&& !globals.ma_utl_userHasKey(infoSupGest.getValue(ig, 1),
+												                          scIdNonRicezioneMail,
+																		  infoSupGest.getValue(ig, 6),
+																		  infoSupGest.getValue(ig, 4))) 
+									{
 										var infoTupleGest = [infoSupGest.getValue(ig, 1), infoSupGest.getValue(ig, 3), infoSupGest.getValue(ig, 5), infoSupGest.getValue(ig, 4)];
 										emailaddresses.push(infoTupleGest);
 										emailaddressesOthers.push(infoSupGest.getValue(ig, 1));
@@ -1100,7 +1187,10 @@ function process_richiesta_permessi(event, fs)
 							globals.getMailUtente(userDipId),
 							null,
 							null];
-						if (scIdMailSuperiore) {
+						// richiedi se inviare una comunicazione al dipendente solo se questi non ha la chiave di non ricezione 
+						if (userDipId
+				            && !globals.ma_utl_userHasKey(userDipId,
+				            							  globals.ma_utl_getSecurityKeyId(globals.Key.NON_INVIARE_MAIL))) {
 							var answerRicGestore = globals.ma_utl_showYesNoQuestion('Inviare una mail di conferma inserimento al dipendente?', 'Invio mail per richiesta inserita');
 							if (answerRicGestore)
 								emailaddresses.push(infoTupleDip);
@@ -1114,7 +1204,7 @@ function process_richiesta_permessi(event, fs)
 						for(var emao = 0; emao < emailaddressesOthers.length; emao++)
 						{
 							var arrEmao = [emailaddressesOthers[emao],globals.getMailUtente(emailaddressesOthers[emao]),null];
-							if(emailaddresses.indexOf(arrEmao) == -1)
+							if(emailaddresses.indexOf(arrEmao) == -1 && !globals.ma_utl_userHasKey(emailaddressesOthers[emao],scIdNonRicezioneMail))
 								emailaddresses.push(arrEmao);
 						}
 					}
@@ -1122,6 +1212,7 @@ function process_richiesta_permessi(event, fs)
 					// compilazione campo 'gestitoda' con indicazione dei nominativi di chi dovrà gestire la richiesta	
 					/** @type {String} */
 					var gestitoDaResp = '';
+					/** @type {Array<Number>}*/
 					var arrGestitoDa = [];
 					
 					globals.ma_sec_removeUsersFilters();
@@ -1130,14 +1221,14 @@ function process_richiesta_permessi(event, fs)
 					   gestitoDaResp = _to_sec_user$user_id.user_id ? globals.getUserName(_to_sec_user$user_id.user_id) : security.getUserName();
 					else
 					{						
-						for (var gdArrResp = 0; gdArrResp < emailaddresses.length; gdArrResp++) {
+						for (var gdArrResp = 0; gdArrResp < arrUserIdGestione.length; gdArrResp++) {
 							// evitando l'eventuale user id del lavoratore per il quale si sta inserendo una richiesta
-							if (emailaddresses[gdArrResp][0] != globals.getUserIdFromIdLavoratore(vIdLavoratore, globals.svy_sec_lgn_owner_id))
-								arrGestitoDa.push(emailaddresses[gdArrResp]);
+							if (arrUserIdGestione[gdArrResp] != globals.getUserIdFromIdLavoratore(vIdLavoratore, globals.svy_sec_lgn_owner_id))
+								arrGestitoDa.push(arrUserIdGestione[gdArrResp]);
 						}
 	
 						for (var gdResp = 0; gdResp < arrGestitoDa.length; gdResp++) {
-							gestitoDaResp += globals.getUserName(arrGestitoDa[gdResp][0]);
+							gestitoDaResp += globals.getUserName(arrGestitoDa[gdResp]);
 							if (gdResp != arrGestitoDa.length - 1)
 								gestitoDaResp += ',';
 						}
@@ -1381,11 +1472,28 @@ function onDataChangeData(oldValue, newValue, event) {
 		solutionModel.removeForm(frmNameTemp);
 	}
 	
+	// TODO test per verifica velocità
+	var verificaFestivita = true;
 	if (event.getElementName() == elements.fld_dal.getName()
 		&& (vAl == null || vAl < vDal))
+	{
 		vAl = new Date(vDal);
+		verificaFestivita = false;
+	}
 	
-	process_refresh_calendario(event);
+	var params = {
+		processFunction: process_refresh_calendario,
+		message: '',
+		opacity: 0.5,
+		paneColor: '#434343',
+		textColor: '#EC1C24',
+		showCancelButton: false,
+		cancelButtonText: '',
+		dialogName: 'This is the dialog',
+		fontType: 'Arial,4,25',
+		processArgs: [event,verificaFestivita]
+	};
+	plugins.busy.block(params);
 	
 	return true;
 }
@@ -1427,4 +1535,30 @@ function onActionInfoSitRatei(event) {
  */
 function onActionTest(event) {
 forms.rp_lkp_eventi.onShowForm(true,event)
+}
+
+/**
+ * Perform the element default action.
+ *
+ * @param {JSEvent} event the event that triggered the action
+ *
+ * @private
+ *
+ * @properties={typeid:24,uuid:"91B0A3A4-A11C-486B-B960-2BB02AB4CB7C"}
+ */
+function onActionBtnRefreshCalendario(event) 
+{
+	var params = {
+		processFunction: process_refresh_calendario,
+		message: '',
+		opacity: 0.5,
+		paneColor: '#434343',
+		textColor: '#EC1C24',
+		showCancelButton: false,
+		cancelButtonText: '',
+		dialogName: 'This is the dialog',
+		fontType: 'Arial,4,25',
+		processArgs: [event,true]
+	};
+	plugins.busy.block(params);
 }
