@@ -16,6 +16,23 @@ function showInfo(event)
 	globals.ma_utl_showFormInDialog(frm.controller.getName(),'Note richiesta');
 }
 
+/**
+ * Perform the element default action.
+ *
+ * @param {JSEvent} event the event that triggered the action
+ *
+ * @private
+ *
+ * @properties={typeid:24,uuid:"AF1C5031-95FF-4F4B-93B1-2EE8FD71C5B0"}
+ */
+function showInfoDetail(event) 
+{
+	var frm = forms.rp_elenco_richieste_tbl_dettaglio;
+	var fs = frm.foundset;
+	globals.lookupFoundset(foundset.idlavoratoregiustificativotesta,fs);
+	globals.ma_utl_showFormInDialog(frm.controller.getName(),'Note richiesta');
+}
+
 /** *
  * @param _event
  * @param _form
@@ -58,11 +75,12 @@ function apriPopupRichiesteEvase(event) {
 	
 	var enabled = true;
 	
-	if(idlavoratore == null ||
-			_to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori 
-	            && idlavoratore === _to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori.idlavoratore)
-	enabled = false;
-	   
+	var loggedLavId = _to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori && _to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori.idlavoratore;
+	var currLavId = idlavoratore;
+	
+	if(currLavId == null || (loggedLavId && currLavId === loggedLavId && !globals.ma_utl_hasKey(globals.Key.RICHIESTA_PERMESSI_AUTO_APPROVAZIONE)))
+		enabled = false;
+	
 	var popUpMenu = plugins.window.createPopupMenu();
     var eliminaItem = popUpMenu.addMenuItem('Elimina la richiesta evasa',globals.eliminaRichiestaEvasa);
     eliminaItem.methodArguments = [event,idlavoratoregiustificativotesta];

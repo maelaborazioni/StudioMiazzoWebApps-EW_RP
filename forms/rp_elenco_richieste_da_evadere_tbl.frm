@@ -21,6 +21,17 @@ typeid:4,
 uuid:"1461D909-86BF-4BAF-B3BD-66123241BD3B"
 },
 {
+horizontalAlignment:0,
+labelFor:"btn_info_dettaglio",
+location:"1170,0",
+name:"lbl_info_rateic",
+size:"40,20",
+styleClass:"table_header",
+text:"Dett.",
+typeid:7,
+uuid:"2A6E75E9-43D4-4BBB-98BC-CC2B44030760"
+},
+{
 dataProviderID:"giorno_dal",
 enabled:true,
 extendsID:"BF10C761-A0A0-4AD5-A213-A54673480979",
@@ -34,13 +45,13 @@ uuid:"4028AC17-091F-4FC4-A781-92562693B7DA"
 {
 horizontalAlignment:0,
 imageMediaID:"8C49AF7F-E20E-4CB9-8289-84B30A5C635D",
-location:"1173,20",
+location:"1209,20",
 name:"btn_info_ratei",
 onActionMethodID:"1BFF5450-C1CB-426A-AE2A-CC08BB3BF84D",
 onRightClickMethodID:"44206A25-B445-4DEF-AAC4-186EFC1B306F",
 showClick:false,
 showFocus:false,
-size:"41,20",
+size:"40,20",
 styleClass:"table",
 toolTipText:"Visualizza la situazione ratei",
 transparent:true,
@@ -67,7 +78,7 @@ uuid:"566B08B1-6B17-4E26-AF45-B8C424FF38FD"
 },
 {
 extendsID:"88825A7B-8F50-4E6D-9409-23E8E7EB3CBE",
-location:"879,0",
+location:"880,0",
 typeid:7,
 uuid:"6012B849-22DD-4138-8D62-9D5130B3F8F3"
 },
@@ -142,6 +153,22 @@ typeid:4,
 uuid:"B4443D6D-9A0D-4F11-8E40-1B97AC7461B8"
 },
 {
+horizontalAlignment:0,
+imageMediaID:"53C5F52B-EB39-42BC-ABA4-C34356BF10CB",
+location:"1170,20",
+name:"btn_info_dettaglio",
+onActionMethodID:"B182A6D3-C7B4-4EC3-8371-C3BDA1E318EC",
+onRightClickMethodID:"44206A25-B445-4DEF-AAC4-186EFC1B306F",
+showClick:false,
+showFocus:false,
+size:"40,20",
+styleClass:"table",
+toolTipText:"Visualizza la situazione ratei",
+transparent:true,
+typeid:7,
+uuid:"B496B395-FE47-4D66-B104-BC1978BA641D"
+},
+{
 labelFor:"fld_nominativo",
 location:"0,0",
 name:"lbl_nominativo",
@@ -154,7 +181,7 @@ uuid:"BA61FF1B-85FA-4900-B39D-D1D1591B8EAB"
 {
 horizontalAlignment:0,
 labelFor:"btn_info",
-location:"1134,0",
+location:"1130,0",
 name:"lb_info",
 size:"40,20",
 styleClass:"table_header",
@@ -188,13 +215,13 @@ uuid:"E0A5E7F2-E876-484D-B2C4-70155EE58737"
 {
 horizontalAlignment:0,
 imageMediaID:"A96F220E-49EF-4C67-AFE7-5AA83EFE59AC",
-location:"1134,20",
+location:"1130,20",
 name:"btn_info",
 onActionMethodID:"38D5FAF4-4DED-4268-9BE7-A3F360B25259",
 onRightClickMethodID:"44206A25-B445-4DEF-AAC4-186EFC1B306F",
 showClick:false,
 showFocus:false,
-size:"41,20",
+size:"40,20",
 styleClass:"table",
 toolTipText:"Visualizza ulteriori informazioni sulla richiesta",
 transparent:true,
@@ -204,7 +231,7 @@ uuid:"E18C7855-636D-4C11-BC01-1EF9E2D8ACE4"
 {
 horizontalAlignment:0,
 labelFor:"btn_info_ratei",
-location:"1173,0",
+location:"1209,0",
 name:"lbl_info_ratei",
 size:"40,20",
 styleClass:"table_header",
@@ -253,7 +280,7 @@ uuid:"F8AF368B-A4F5-477D-A460-9E9C03581D45"
 {
 enabled:true,
 extendsID:"9DD27039-B0A2-4D3D-B890-8E0C796F4045",
-location:"879,20",
+location:"880,20",
 onRightClickMethodID:"-1",
 typeid:4,
 uuid:"FB0EABAF-29F0-4AE2-A23B-99EFA0853CEE"

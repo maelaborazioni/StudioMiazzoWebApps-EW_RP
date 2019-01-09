@@ -40,6 +40,23 @@ function showInfo(event)
 	globals.ma_utl_showFormInDialog(frm.controller.getName(),'Note richiesta');
 }
 
+/**
+ * Perform the element default action.
+ *
+ * @param {JSEvent} event the event that triggered the action
+ *
+ * @private
+ *
+ * @properties={typeid:24,uuid:"B182A6D3-C7B4-4EC3-8371-C3BDA1E318EC"}
+ */
+function showInfoDetail(event) 
+{
+	var frm = forms.rp_elenco_richieste_tbl_dettaglio;
+	var fs = frm.foundset;
+	globals.lookupFoundset(foundset.idlavoratoregiustificativotesta,fs);
+	globals.ma_utl_showFormInDialog(frm.controller.getName(),'Dettaglio richiesta');
+}
+
 /** *
  * @param _event
  * @param _form
