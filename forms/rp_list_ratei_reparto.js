@@ -175,7 +175,7 @@ function preparaRateiReparto(idGroup,limitaAlGiorno,arrDipFiltrati)
     	{
     		fs.idlavoratore = arrDipReparto[i];
     		if(fs.search() == 0)
-    			continue;
+    			continue;    		
     	}
     	
     	// Dataset dei ratei per l'i-esimo dipendente
@@ -357,7 +357,7 @@ function onShow(firstShow, event)
 		application.setValueListItems('vls_ma_sec_groups', displayValues, realValues);
 		
 		var dsSecGroups = application.getValueListItems('vls_ma_sec_groups');
-		if(dsSecGroups.getMaxRowIndex() > 1)
+		if(dsSecGroups.getMaxRowIndex() == 1)
 			vOptGruppoId = parseInt(dsSecGroups.getValue(2,2),10);
 		else
 			vOptGruppoId = -1;
@@ -504,24 +504,22 @@ function process_refresh_ratei_reparto()
  */
 function refreshRateiReparto()
 {
+	arrDipReparto = [];
+	
 	if(vOptGruppoId != -1)
 	   arrDipReparto = globals.getLavoratoriReparto(vOptGruppoId);
 	else
 	{
 		if(_to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori)
 			arrDipReparto.push(arrDipReparto.push(_to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori.idlavoratore));
-		
-		/** @type {JSFoundSet<db:/ma_anagrafiche/lavoratori>}*/
-		var fs = databaseManager.getFoundSet(globals.Server.MA_ANAGRAFICHE,globals.Table.LAVORATORI);
-		fs.loadAllRecords();
-		fs.sort('lavoratori_to_persone.nominativo asc');
-		for(var l = 1; l <= fs.getSize(); l++)
-			arrDipReparto.push(fs.getRecord(l)['idlavoratore']);
-			
+	
+		var arrDipRepartoTmp = globals.getUserHierarchy(globals.svy_sec_lgn_user_org_id, globals.ma_sec_lgn_groupid, true);
+		for(var d = 0; d < arrDipRepartoTmp.length; d++)
+		{
+			if(arrDipRepartoTmp[d] != null)
+				arrDipReparto.push(arrDipRepartoTmp[d]);
+		}
 	}
-	//	else
-//	   arrDipReparto = globals.getUserHierarchy(globals.svy_sec_lgn_user_org_id
-//		                                        ,globals.ma_sec_lgn_groupid);
 		
 	preparaRateiReparto(vOptGruppoId, limitaAl);
 	preparaSituazioneRateiReparto(arrDipReparto,limitaAl);
