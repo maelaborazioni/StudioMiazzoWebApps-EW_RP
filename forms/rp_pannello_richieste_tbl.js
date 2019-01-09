@@ -78,6 +78,7 @@ function updateStatoRichiesta(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,e
 			if (idDitta) {
 				for (var i = 1; i <= fsRighe.getSize(); i++) {
 					var recRiga = fsRighe.getRecord(i);
+					var propPredefEvento = globals.getProprietaPredefinitaEvento(recRiga.lavoratori_giustificativirighe_to_e2eventi.ideventoclasse);
 					var evParams = globals.inizializzaParametriEvento(idDitta,
 						recRiga.giorno.getFullYear() * 100 + recRiga.giorno.getMonth() + 1,
 						0,
@@ -86,7 +87,7 @@ function updateStatoRichiesta(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,e
 						globals.TipoConnessione.CLIENTE,
 						[recRiga.idlavoratore],
 						recRiga.idevento,
-						recRiga.proprieta ? recRiga.proprieta : "",
+						propPredefEvento,
 						recRiga.giornointero == 0 ? recRiga.ore : 0, //verificare se giorno intero o meno
 						recRiga.importo,
 						-1,

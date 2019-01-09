@@ -47,10 +47,11 @@ function apriPopupRichiesteEvase(event) {
 	
 	var enabled = true;
 	
-	if(idlavoratore == null || 
-			_to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori 
-	            && idlavoratore === _to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori.idlavoratore)
-	enabled = false;
+	var loggedLavId = _to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori && _to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori.idlavoratore;
+	var currLavId = idlavoratore;
+	
+	if(currLavId == null || (loggedLavId && currLavId === loggedLavId && !globals.ma_utl_hasKey(globals.Key.RICHIESTA_PERMESSI_AUTO_APPROVAZIONE)))
+		enabled = false;
 	   
 	var popUpMenu = plugins.window.createPopupMenu();
     var eliminaItem = popUpMenu.addMenuItem('Elimina la richiesta evasa',globals.eliminaRichiestaEvasa);
