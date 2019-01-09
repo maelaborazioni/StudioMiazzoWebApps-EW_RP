@@ -741,7 +741,7 @@ function gestisciRichiesta(idgiustificativotesta, status, inviaMail, noteRispost
 				    if(globals.getFasciaProgrammataGiorno(rec.idlavoratore ,recRigaPre.giorno))
 				    {
 				    	databaseManager.rollbackTransaction();
-				    	globals.ma_utl_showWarningDialog('Esistono delle fasce precedentemente programmate per i giorni richiesti, non è possibile confermare la richiesta','Conferma richiesta');
+				    	globals.ma_utl_showWarningDialog(globals.getHtmlString('Esiste una fascia precedentemente programmata per il giorno ' + globals.dateFormat(recRigaPre.giorno,globals.EU_DATEFORMAT) + ', non è possibile inserire la richiesta'), 'Validazione richiesta permessi');
                         return;
 				    }
 				}
@@ -1638,6 +1638,73 @@ function rifiutaRichiesta(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,_even
 }
 
 /**
+ * TODO generated, please specify type and doc for the params
+ * @param _itemInd
+ * @param _parItem
+ * @param _isSel
+ * @param _parMenTxt
+ * @param _menuTxt
+ * @param event
+ * @param idGiustificativoTesta
+ *
+ * @properties={typeid:24,uuid:"E04B5C8C-F155-4A88-BCF3-B22B73F15A3B"}
+ * @AllowToRunInFind
+ */
+function eliminaRichiesta(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,event,idGiustificativoTesta)
+{
+	// recuperiamo le informazioni sui giorni relativi alla richiesta che si vuole revocare
+	/** @type {JSFoundSet<db:/ma_anagrafiche/lavoratori_giustificativirighe>} */
+	var fsRighe = databaseManager.getFoundSet(globals.Server.MA_ANAGRAFICHE,globals.Table.RP_RIGHE);
+	if(fsRighe.find())
+	{
+		fsRighe.idlavoratoregiustificativotesta = idGiustificativoTesta;
+		if(fsRighe.search())
+		{
+		   var recRiga = fsRighe.getRecord(1);
+		   //....
+		   
+		    // salvataggio informazioni per eventuale mail di avviso al dipendente
+			/** @type {JSFoundSet<db:/ma_anagrafiche/lavoratori_giustificativitesta>} */
+		    var recTesta = recRiga.lavoratori_giustificativirighe_to_lavoratori_giustificativitesta;
+		    var idLavoratore = recRiga.idlavoratore;
+		    var userId = globals.getUserIdFromIdLavoratore(idLavoratore,_to_sec_owner$owner_id.owner_id.toString());
+			var dalleOre = recRiga.dalleore; 
+    	    var alleOre = recRiga.alleore; 
+            var dataRichiesta = recTesta.datarichiesta;
+            var stato = -1; // valore per identificare l'operazione di eliminazione
+			var approvatoIl = recTesta.approvatoil;
+			var giornoDal = recTesta.giorno_dal;
+			var giornoAl = recTesta.giorno_al;				   
+			var idEvento = recRiga.idevento;
+			
+			// eliminazione record giustificativo testa
+	 	    if(!fsRighe.lavoratori_giustificativirighe_to_lavoratori_giustificativitesta.deleteRecord())
+	 	    {
+			    globals.ma_utl_showWarningDialog('Errore durante l\'eliminazione della richiesta, contattare il servizio di assistenza','Elimina richiesta permesso');
+	 	        return;
+	 	    }
+	 	    
+	 	    if(globals.ma_utl_showYesNoQuestion('La richiesta è stata eliminata. Inviare una comunicazione al dipendente?','Elimina richiesta'))
+			{
+				globals.gestisciInvioComunicazione(dataRichiesta,
+					    	                       stato,
+												   approvatoIl,
+												   globals.svy_sec_lgn_user_id,
+												   giornoDal,
+												   giornoAl,
+												   dalleOre,
+												   alleOre,
+												   userId,
+												   idEvento,
+												   true);
+			}	
+	 	    
+			databaseManager.refreshRecordFromDatabase(fsRighe,-1);
+		}
+	}
+}
+
+/**
  * Elimina la richiesta precedentemente evasa e reimposta la situazione in giornaliera di budget
  *  
  * @param {Number} _itemInd
@@ -2286,12 +2353,13 @@ function ottieniDataSetRateiReparto(arrDip,allaData,soloRateiDipendente)
 /**
  * @param {Object} user_org_id
  * @param {Object} [user_group_id]
+ * @param {Boolean} [sortByUserName]
  * 
  * @return {Array}
  *
  * @properties={typeid:24,uuid:"5BA04E07-A44F-4BAC-B000-F52BD8097086"}
  */
-function getUserHierarchy(user_org_id,user_group_id)
+function getUserHierarchy(user_org_id,user_group_id,sortByUserName)
 {
 	var sqlQuery = "WITH RECURSIVE hierarchy(organization_id, parent_organization_id) AS\
 					(\
@@ -2318,12 +2386,14 @@ function getUserHierarchy(user_org_id,user_group_id)
 					SELECT\
 						  sutl.user_id\
 						, sutl.idlavoratore\
+						, su.name_last \
+						, su.name_first_names \
 					FROM\
 						sec_user_to_lavoratori sutl\
 						INNER JOIN sec_user su\
 							ON su.user_id = sutl.user_id\
 					WHERE\
-						su.user_id IN\
+					    su.user_id IN\
 						(\
 							SELECT DISTINCT\
 								suo.user_id\
@@ -2343,9 +2413,12 @@ function getUserHierarchy(user_org_id,user_group_id)
 		sqlQuery += "h.organization_id <> (SELECT organization_id FROM sec_user_org WHERE user_org_id = ?)\
 									OR\
 									sug.user_org_id = ?\
-						)\
-					ORDER BY\
-						su.user_id;";
+						) \
+						ORDER BY ";
+		if(sortByUserName)
+			sqlQuery += "su.name_last,su.name_first_names";
+		else
+			sqlQuery += "su.user_id";
 	
 	var dataset = databaseManager.getDataSetByQuery(globals.nav_db_framework, sqlQuery, [user_org_id, user_org_id, user_org_id], -1);
 	if (dataset.getMaxRowIndex() > 0)
@@ -2640,4 +2713,16 @@ function getLavoratoreFromGiustificativo(idLavoratoreGiustificativoTesta)
 	}
 	
 	return null;
+}
+
+/**
+ * @properties={typeid:24,uuid:"1B0A8C43-D32A-407C-B804-D175DA7AB46D"}
+ */
+function getFestivitaStandard()
+{
+	return ["20181101","20181208","20181225","20181226","20181208",
+			//TODO pasqua?
+			"20190101","20190421","20190422","20190425","20190501","20190602","20190815",
+			"20191101","20191208","20191225","20191226"
+	];
 }
