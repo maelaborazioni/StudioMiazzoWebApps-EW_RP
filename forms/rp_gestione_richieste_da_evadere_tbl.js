@@ -6,6 +6,7 @@
 function apriPopUpMenuRichiesteDaEvadere(event)
 {
 	var enabled = true;
+	var deletable = false;
 	
     if(idlavoratore == null	
     	||	_to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori 
@@ -15,6 +16,11 @@ function apriPopUpMenuRichiesteDaEvadere(event)
 	
 	var source = event.getSource();
 	var currFrmName = event.getFormName();
+	var frmName = event.getFormName();
+	
+	/** @type {Number} */
+	var id = forms[frmName].foundset && forms[frmName].foundset.foundset && forms[frmName].foundset.getSelectedRecord()['idlavoratoregiustificativotesta'];
+	deletable = id != null;
 	
 	var popUpMenu = plugins.window.createPopupMenu();
 	
@@ -36,6 +42,12 @@ function apriPopUpMenuRichiesteDaEvadere(event)
 			refuse.methodArguments = [event, 0];
 			refuse.enabled = enabled;
 	
+			popUpMenu.addSeparator();
+			
+			var del = popUpMenu.addMenuItem('Elimina richiesta', globals.eliminaRichiesta); 
+			del.methodArguments = [event,id];
+			del.enabled = deletable;
+			
 			popUpMenu.addSeparator();
 			
 			var confirmMultiple = popUpMenu.addMenuItem('Conferma multipla', globals.confermaMultipla); 
