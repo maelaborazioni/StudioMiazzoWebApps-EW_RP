@@ -231,6 +231,14 @@ function gestisciRichiestaWS(clientDb, idgiustificativotesta, operatore_id, stat
 									if (!saved)
 									// codice di errore inserimento evento in giornaliera di budget
 										return 402;
+									
+									// Ticket #15128 rendi il giorno riconteggiabile in seguito ad inseriemnto richiesta in budget
+									globals.rendiGiorniRiconteggiabiliWS(
+										   [recRiga.idlavoratore],
+										   [recRiga.giorno.getDate()],
+										   idDitta,
+										   recRiga.giorno.getFullYear() * 100 + recRiga.giorno.getMonth() + 1,
+										   globals.TipoConnessione.CLIENTE);
 								}
 							}
 							
