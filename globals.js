@@ -813,6 +813,13 @@ function gestisciRichiesta(idgiustificativotesta, status, inviaMail, noteRispost
 								globals.ma_utl_showErrorDialog('Dipendente : ' + globals.getNominativo(recRiga.idlavoratore)+ ' , ' + globals.dateFormat(recRiga.giorno,globals.EU_DATEFORMAT)+ ' - Si è verificato un errore, controllare in giornaliera di budget l\'esito della compilazione ed eventualmente contattare il servizio di assistenza', 'Porta richiesta permesso in giornaliera di budget');
 								return;
 							}
+							
+							// Ticket #15128 rendi il giorno riconteggiabile in seguito ad inseriemnto richiesta in budget
+							globals.rendiGiorniRiconteggiabili([recRiga.idlavoratore],
+															   [recRiga.giorno.getDate()],
+															   idDitta,
+															   recRiga.giorno.getFullYear() * 100 + recRiga.giorno.getMonth() + 1,
+															   globals.TipoConnessione.CLIENTE);
 						}
 					}
 					else
@@ -1760,7 +1767,7 @@ function eliminaRichiestaEvasa(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,
 	       }
 	       
 	       var _answer = globals.ma_utl_showYesNoQuestion('Eliminare la richiesta selezionata ed i relativi eventi in giornaliera di budget ? \n' + 
-	    	                                              'NB: controllare che l\'evento non sia già stato portato in giornaliera normale','Elimina richiesta');
+	       	                                              'NB: controllare che l\'evento non sia già stato portato in giornaliera normale','Elimina richiesta');
            if(_answer)
            {
         	   // per ogni giorno corrispondente, elimina l'evento presente nella giornaliera di budget
@@ -2713,16 +2720,4 @@ function getLavoratoreFromGiustificativo(idLavoratoreGiustificativoTesta)
 	}
 	
 	return null;
-}
-
-/**
- * @properties={typeid:24,uuid:"1B0A8C43-D32A-407C-B804-D175DA7AB46D"}
- */
-function getFestivitaStandard()
-{
-	return ["20181101","20181208","20181225","20181226","20181208",
-			//TODO pasqua?
-			"20190101","20190421","20190422","20190425","20190501","20190602","20190815",
-			"20191101","20191208","20191225","20191226"
-	];
 }
