@@ -25,7 +25,7 @@ function refreshRateiDipendenti(event) {
 function onShowForm(_firstShow, _event) {
 
 	var ultimoPeriodoPredisposto = globals.getUltimoPeriodoPredisposto(idlavoratore);
-	var dataUltimoPeriodoPredisposto = globals.getLastDatePeriodo(ultimoPeriodoPredisposto);
+	var dataUltimoPeriodoPredisposto = ultimoPeriodoPredisposto != null ? globals.getLastDatePeriodo(ultimoPeriodoPredisposto) : null;
 	if(dataSituazioneAlGiorno == null
 	   || dataSituazioneAlGiorno > dataUltimoPeriodoPredisposto)
    	   dataSituazioneAlGiorno = dataUltimoPeriodoPredisposto;
@@ -46,7 +46,7 @@ function onShowForm(_firstShow, _event) {
 function onRecordSelection(_event, _form) {
 	
 	var ultimoPeriodoPredisposto = globals.getUltimoPeriodoPredisposto(idlavoratore);
-	var dataUltimoPeriodoPredisposto = globals.getLastDatePeriodo(ultimoPeriodoPredisposto);
+	var dataUltimoPeriodoPredisposto = ultimoPeriodoPredisposto != null ? globals.getLastDatePeriodo(ultimoPeriodoPredisposto) : null;
 	if(dataSituazioneAlGiorno == null
 	   || dataSituazioneAlGiorno > dataUltimoPeriodoPredisposto)
    	   dataSituazioneAlGiorno = dataUltimoPeriodoPredisposto;
