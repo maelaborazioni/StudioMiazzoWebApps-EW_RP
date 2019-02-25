@@ -84,3 +84,43 @@ function onActionNuovaRichiesta(event)
 		globals.ma_utl_showWarningDialog('Lavoratore non riconosciuto, si prega di riprovare','Nuova richiesta ferie/permessi');
 	
 }
+
+/**
+ * Perform the element default action.
+ *
+ * @param {JSEvent} event the event that triggered the action
+ *
+ * @private
+ *
+ * @properties={typeid:24,uuid:"7F5DDEA2-662B-4FA4-AE1C-A3FB493817F3"}
+ */
+function onActionNuovaRichiestaMulti(event)
+{
+	// Scelta del dipendente da gestire
+	/** @type {Array<Number>}*/
+	var arrIdLavoratore = null;
+	
+	arrIdLavoratore = globals.svy_nav_showLookupWindow(event,
+		                                            null,
+													'AG_Lkp_Lavoratori',
+													null,
+													'FiltraDittaRP',
+													null,
+													null,
+													null,
+													true);
+	if(arrIdLavoratore.length)
+	{
+		// gestire l'inserimento della nuova richiesta
+	    var frm = forms.rp_richiesta_permessi_multi;
+	    frm.vArrIdLavoratore = arrIdLavoratore;
+	    frm.vDal = null;
+	    frm.vAl = null;
+	    frm.vIsGestore = true;
+	    globals.ma_utl_setStatus(globals.Status.EDIT,frm.controller.getName());
+	    globals.ma_utl_showFormInDialog(frm.controller.getName(),'Imposta periodo di chiusura per più dipendenti');
+
+	}
+	else
+		globals.ma_utl_showWarningDialog('Nessun lavoratore selezionato','Nuova richiesta ferie/permessi');
+}
