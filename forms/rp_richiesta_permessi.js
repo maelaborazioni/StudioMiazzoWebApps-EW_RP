@@ -126,9 +126,6 @@ function process_refresh_calendario(event,verificaFestivita) {
 		var rows = Math.floor( (vAl - vDal) / 86400000) + 1;
 		var dsRic = databaseManager.createEmptyDataSet(0, columns);
 	
-		// se la ditta utilizza il criterio di smaltimento inseriremo l'evento PD altrimenti l'evento F
-		var usaSmaltimento = globals.utilizzaSmaltimentoRatei(globals.getDitta(vIdLavoratore));
-	
 		var error = false;
 		var errorMessage = 'La fascia dei giorni seguenti è stata forzata:<p>';
 	
@@ -140,6 +137,27 @@ function process_refresh_calendario(event,verificaFestivita) {
 		case 'DUSGR':
 			if (globals.TODAY > vDal) throw new Error('La data della richiesta non può essere precedente alla data in cui viene effettuata');
 			break;
+		// ticket #15123 inserimento entro x giorni del mese successivo rispetto alla data della richiesta	
+		case 'E1GLMS':
+			if(vDal < globals.TODAY && 
+					globals.getGiornoLavorativoMeseSucc(vDal,1) < globals.TODAY)
+			   throw new Error('Non è più possibile inserire una richiesta per il periodo indicato');
+			break;
+		case 'E2GLMS':
+			if(vDal < globals.TODAY &&
+					globals.getGiornoLavorativoMeseSucc(vDal,2) < globals.TODAY)
+			   throw new Error('Non è più possibile inserire una richiesta per il periodo indicato');
+			break;
+		case 'E3GLMS':
+			if(vDal < globals.TODAY &&
+					globals.getGiornoLavorativoMeseSucc(vDal,3) < globals.TODAY)
+			   throw new Error('Non è più possibile inserire una richiesta per il periodo indicato');
+			break;
+		case 'E4GLMS':
+			if(vDal < globals.TODAY &&
+					globals.getGiornoLavorativoMeseSucc(vDal,4) < globals.TODAY)
+			   throw new Error('Non è più possibile inserire una richiesta per il periodo indicato');
+			break;	
 		default:
 			break;
 		}
@@ -176,7 +194,7 @@ function process_refresh_calendario(event,verificaFestivita) {
 		// verifica ed ignora i giorni festivi
 		var arrFestDip = [];
 		// caso solo festività standard
-		if(globals.ma_utl_hasModule(globals.Module.FESTIVITA_STANDARD))
+		if(globals.getParameterValue(globals.getDitta(vIdLavoratore), 'FS') == 'STD')
 		   arrFestDip = globals.getFestivitaStandard();
 		// caso festività condizionata dipendente / periodo 
 		else
@@ -344,8 +362,7 @@ function validaRichiesta(fs)
 			var festivitaFin = globals.getFestivitaDipendente(globals.getDitta(vIdLavoratore),vIdLavoratore,periodoFin);
 			for(f = 0; f < festivitaFin.length; f++)
 				festivita.push('' + (periodoFin * 100 + festivitaFin[f]) + ''); 
-		}
-				
+		}				
 	}
 	
 	for (var i = 1; i <= numGiorni; i++) {
@@ -434,12 +451,18 @@ function validaRichiesta(fs)
 				default:
 					break;
 				}
-				if (!globals.validaOrarioInserito(rec['dalleore'], m30) || !globals.validaOrarioInserito(rec['alleore'], m30)) {
-					globals.ma_utl_showWarningDialog('Verifica che nel giorno ' + globals.dateFormat(rec['giorno'],globals.EU_DATEFORMAT) +' l\'orario inserito sia conforme alla gestione orari della ditta', 'Richiesta ferie e permessi');
+				if (!globals.validaOrarioInserito(rec['dalleore'], m30) 
+						|| !globals.validaOrarioInserito(rec['alleore'], m30)) 
+				{
+					globals.ma_utl_showWarningDialog('Nel giorno ' + globals.dateFormat(rec['giorno'],globals.EU_DATEFORMAT) +
+						                             ' gli orari inseriti devono essere a multipli di ' +
+													 m30 ? '30' : '15' + 'minuti, come da gestione orari della ditta'		 
+					                                 , 'Richiesta ferie e permessi');
 					return false;
 				}
-			}
-
+			}		
+			
+			// controllo inserimento modalità dell'orario della richiesta 
 			switch (globals.getParameterValue(globals.getDitta(vIdLavoratore), 'MCO')) {
 			case 'SF': // di default si effettuano i controlli sulla fascia associate al giorno
 				// controllo fine orario non supera orario teorico massimo
@@ -459,14 +482,33 @@ function validaRichiesta(fs)
 				break;
 			}
 
-			if (objInfoFascia['totaleorefascia'] < globals.calcolaOreEvento(_dalleOre,
-				_alleOre,
-				objInfoFascia['inizioorario'],
-				objInfoFascia['iniziopausa'],
-				objInfoFascia['finepausa'],
-				objInfoFascia['fineorario'],
-				objInfoFascia['totaleorefascia'],
-				objInfoFascia['totaleorepausa'])) {
+			var totOre = globals.calcolaOreEvento(_dalleOre,
+												  _alleOre,
+												  objInfoFascia['inizioorario'],
+												  objInfoFascia['iniziopausa'],
+												  objInfoFascia['finepausa'],
+												  objInfoFascia['fineorario'],
+												  objInfoFascia['totaleorefascia'],
+												  objInfoFascia['totaleorepausa']);
+			
+			// controllo inserimento di una richiesta avente una durata diversa dalla durata imposta
+//			switch (globals.getParameterValue(globals.getDitta(vIdLavoratore), 'DIR')) {
+//			case 'MG': // la richiesta dev'essere pari a mezza giornata (non posso fare ulteriori controlli sull'orario...)
+//				if(totOre * 100 != objInfoFascia['totaleorefascia'])
+//				{
+//					globals.ma_utl_showWarningDialog('La richiesta può essere effettuata solo per la giornata intera o la mezza giornata',
+//						                             'Richiesta ferie e permessi');
+//					return false;
+//				}
+//				break;
+//			case 'NO':
+//				break;
+//			default:
+//				break;
+//			}
+			
+			if (objInfoFascia['totaleorefascia'] < totOre)
+			{
 				globals.ma_utl_showWarningDialog('Nel giorno ' + globals.dateFormat(rec['giorno'],globals.EU_DATEFORMAT) +' l\'orario inserito è superiore al totale di ore della fascia teorica', 'Richiesta ferie e permessi');
 				return false;
 			}
@@ -685,7 +727,10 @@ function process_richiesta_permessi(event, fs)
 					recRiga.dalleore = rec['dalleore'];
 					recRiga.alleore = rec['alleore'];
 					recRiga.idevento = rec['idevento'];
-					recRiga.proprieta = rec['codiceproprieta'];
+					
+					//Ticket #15325
+					recRiga.proprieta = globals.getProprietaPredefinitaEvento(globals.getClasseEvento(rec['idevento']));
+					
 					recRiga.ore = !rec['intero'] ? rec['oreevento'] : 0;
 					recRiga.importo = 0;
 				
