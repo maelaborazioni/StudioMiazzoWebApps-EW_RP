@@ -2598,23 +2598,15 @@ function inviaMailRichiestaEsistente(rec)
 		// invio mail gestori richiesta
 		for (var e = 0; e < emailaddresses.length; e++) {
 			// costruzione intestazione e testo mail
-			var subject = (bSubjectNom ? globals.getNominativo(idLavoratore) + " - " : "") + "Comunicazione presenza richiesta ferie e permessi - Presenza Semplice Studio Miazzo";
-			var subjectEn = "Advice for request - Presenza Semplice Studio Miazzo";
+			var subject = (bSubjectNom ? globals.getNominativo(idLavoratore) + " - " : "") + "Comunicazione presenza richiesta ferie e permessi - Presenza Semplice";
+			var subjectEn = "Advice for request - Presenza Semplice";
 			var msgText = "plain msg<html>";
 			msgText += "<head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"></head>";
 			msgText += "<body>";
 			var msgTextEn = msgText; 
 			
 			// link per il servizio di gestione richiesta con restful web service
-			var url = globals.RfpServerLink +  
-			          "/rp_servlet?idgiustificativotesta=" + idLavoratoreGiustificativoTesta + 
-					  "&cliente=" + globals.customer_dbserver_name + 
-					  "&operatore=" + emailaddresses[e][0] + 
-					  "&wsurl=" + globals.WS_RFP_URL + 
-					  "&userid=" + _to_sec_user$user_id.user_id + 
-					  "&othersid=" + emailaddressesOthers.join(',') + 
-					  "&confirmsid=" + emailaddressesConfirm.join(',') + 
-					  "&refusesid=" + emailaddressesRefuse.join(',');
+			var url = globals.RfpServerLink + "/api/RequestManager/demand/managedemand?reference=" + idLavoratoreGiustificativoTesta + "&user=" + emailaddresses[e][0]; 
 	
 			if (emailaddresses[e] && plugins.mail.isValidEmailAddress(emailaddresses[e][1])) {
 				msgText += "Gentile <b>" + globals.getUserName(emailaddresses[e][0]) + "</b>, <br/> con la presente le comunichiamo la presenza di una richiesta di ";
@@ -2658,15 +2650,15 @@ function inviaMailRichiestaEsistente(rec)
 				msgTextEn += '<br/><br/>';
 	
 				if ((emailaddresses[e][2] == 1000 || (livAut != undefined && emailaddresses[e][2] == livAut))) {
-					msgText += '<a href= ' + url + "&status=1" + '>Confermare richiesta</a>';
+					msgText += '<a href= \"' + url + '&status=1\"' + '>Confermare richiesta</a>';
 					msgText += '<br/>';
-					msgText += '<a href=' + url + "&status=2" + '>Rifiutare richiesta</a>';
-					msgText += "<br/><br/>In alternativa collegarsi all\'<a href='https://webapp.studiomiazzo.it/login.html'>applicazione</a> per la gestione delle richieste."
+					msgText += '<a href=\"' + url + '&status=2\"' + '>Rifiutare richiesta</a>';
+					msgText += "<br/><br/>In alternativa collegarsi all\'<a href='https://webapp.peoplegest.it/login.html'>applicazione</a> per la gestione delle richieste."
 	
-					msgTextEn += '<a href= ' + url + "&status=1" + '>Confirm request</a>';
+					msgTextEn += '<a href=\"' + url + '&status=1\"' + '>Confirm request</a>';
 					msgTextEn += '<br/>';
-					msgTextEn += '<a href=' + url + "&status=2" + '>Refuse request</a>';
-					msgTextEn += "<br/><br/>Alternatively you can go to the <a href='https://webapp.studiomiazzo.it/login.html'>application</a> to handle the requests."
+					msgTextEn += '<a href=\"' + url + '&status=2\"' + '>Refuse request</a>';
+					msgTextEn += "<br/><br/>Alternatively you can go to the <a href='https://webapp.peoplegest.it/login.html'>application</a> to handle the requests."
 				}
 	
 				//							msgTextEn += '</p>';
@@ -2678,7 +2670,7 @@ function inviaMailRichiestaEsistente(rec)
 	
 				if (!plugins.mail.sendMail
 											(emailaddresses[e][1],
-											'Ferie e permessi <assistenza@studiomiazzo.it>',
+											'Ferie e permessi <noreply@peoplegest.it>',
 											englishLang ? subjectEn : subject,
 											englishLang ? msgTextEn : msgText,
 											null,
@@ -2720,4 +2712,294 @@ function getLavoratoreFromGiustificativo(idLavoratoreGiustificativoTesta)
 	}
 	
 	return null;
+}
+
+/**
+ * @AllowToRunInFind
+ * 
+ * Recupera il record della notifica richiesta
+ * 
+ * @param {String} referenceId
+ *
+ * @properties={typeid:24,uuid:"AD53261A-0EAD-4B49-98F4-944CCE52DF94"}
+ */
+function getNotificationRequest(referenceId)
+{
+	/** @type{JSFoundSet<db:/ma_framework/notification_requests>} */
+	var fsNotReq = databaseManager.getFoundSet(globals.Server.MA_FRAMEWORK,globals.Table.NOTIFICATION_REQUESTS);
+	if(fsNotReq.find())
+	{
+		fsNotReq.referenceid = referenceId;
+		fsNotReq.search();
+		
+		return fsNotReq;
+	}
+	
+	return null;
+}
+
+/**
+ * Elimina lo storico della notifica della richiesta selezionata
+ *  
+ * @param {String} referenceId
+ *
+ * @properties={typeid:24,uuid:"82F62C36-8256-4224-BEC1-22D5E0DC70C1"}
+ */
+function deleteNotificationRequest(referenceId)
+{
+	var success = true;
+	var fsNotReq = getNotificationRequest(referenceId);
+	
+	if(fsNotReq != null)
+	   success = fsNotReq.deleteRecord();
+		
+	return success;
+}
+
+/**
+ * @AllowToRunInFind
+ * 
+ * Recupera i records relativi ai subscriber che si aspettano 
+ * la notifica della conferma della richiesta
+ * 
+ * @param {String} requestId
+ *
+ * @properties={typeid:24,uuid:"E979797B-A7AD-4DEC-A679-107D8C16F6CA"}
+ */
+function getNotificationSubscriberConfirms(requestId)
+{
+	/** @type{JSFoundSet<db:/ma_framework/notification_subscribers>} */
+	var fsNotSubs = databaseManager.getFoundSet(globals.Server.MA_FRAMEWORK,globals.Table.NOTIFICATION_SUBSCRIBERS);
+	if(fsNotSubs.find())
+	{
+		fsNotSubs.requestid = requestId;
+		fsNotSubs.confirmed = 1;
+		fsNotSubs.search();
+		
+		return fsNotSubs;
+	}
+	
+	return null;
+}
+
+/**
+ * @AllowToRunInFind
+ * 
+ * Recupera i records relativi ai subscriber che si aspettano 
+ * la notifica del rifiuto della richiesta
+ * 
+ * @param {String} requestId
+ *
+ * @properties={typeid:24,uuid:"D8344B68-1A63-4BCC-90D1-E0D2BA7C0EBC"}
+ */
+function getNotificationSubscriberRejects(requestId)
+{
+	/** @type{JSFoundSet<db:/ma_framework/notification_subscribers>} */
+	var fsNotSubs = databaseManager.getFoundSet(globals.Server.MA_FRAMEWORK,globals.Table.NOTIFICATION_SUBSCRIBERS);
+	if(fsNotSubs.find())
+	{
+		fsNotSubs.requestid = requestId;
+		fsNotSubs.rejected = 1;
+		fsNotSubs.search();
+		
+		return fsNotSubs;
+	}
+	
+	return null;
+}
+
+/**
+ * @AllowToRunInFind
+ * 
+ * Recupera i records relativi ai subscriber che si aspettano 
+ * la notifica della conferma della richiesta
+ * 
+ * @param {String} requestId
+ *
+ * @properties={typeid:24,uuid:"00058540-4173-4FF9-A8E4-019DE6FDD8EA"}
+ */
+function getNotificationSubscriberNeutrals(requestId)
+{
+	/** @type{JSFoundSet<db:/ma_framework/notification_subscribers>} */
+	var fsNotSubs = databaseManager.getFoundSet(globals.Server.MA_FRAMEWORK,globals.Table.NOTIFICATION_SUBSCRIBERS);
+	if(fsNotSubs.find())
+	{
+		fsNotSubs.requestid = requestId;
+		fsNotSubs.manager = 0;
+		fsNotSubs.confirmed = 0;
+		fsNotSubs.rejected = 0;
+		fsNotSubs.search();
+		
+		return fsNotSubs;
+	}
+	
+	return null;
+}
+
+/**
+ * @param {String} clientDb
+ * @param {Number} idgiustificativotesta
+ * @param {Number} operatore_id
+ * @param {Number} status
+ * @param {Boolean} inviaMail
+ * @param {String} wsName
+ * @param {Number} userid
+ * @param {Array} [others_id]
+ * @param {Array} [confirms_id]
+ * @param {Array} [refuses_id]
+ * 
+ * @return {Number}
+ * 
+ * @properties={typeid:24,uuid:"6A8A269A-1C77-4179-88EC-A6AAB12D7B02"}
+ * @AllowToRunInFind
+ */
+function gestisciRichiestaWS(clientDb, idgiustificativotesta, operatore_id, status, inviaMail, wsName, userid, others_id, confirms_id, refuses_id)
+{ 
+	try
+	{
+		var idDitta = null;
+		var sqlDitta = "SELECT idDitta FROM Lavoratori WHERE idLavoratore IN \
+		                (SELECT idLavoratore FROM Lavoratori_GiustificativiTesta \
+	                     WHERE idLavoratoreGiustificativoTesta = ?)";
+		var arrDitta = [idgiustificativotesta];
+		var dsDitta = databaseManager.getDataSetByQuery(clientDb, sqlDitta, arrDitta, 1);
+		idDitta = dsDitta.getValue(1, 1);
+	
+		if (!idDitta)
+			return 403;
+		
+		/** @type {JSFoundSet<db:/ma_anagrafiche/lavoratori_giustificativitesta>}*/
+		var fs = databaseManager.getFoundSet(clientDb, globals.Table.RP_TESTA);
+		if (fs.find()) {
+			fs.idlavoratoregiustificativotesta = idgiustificativotesta;
+			fs.stato = '^';
+			if (fs.search() > 0) {
+				databaseManager.startTransaction();
+	
+				/** @type {JSRecord<db:/ma_anagrafiche/lavoratori_giustificativitesta>}*/
+				var rec = fs.getSelectedRecord();
+	
+				// conferma o rifiuta la richiesta
+				rec['stato'] = status;
+				rec['approvatoil'] = new Date();
+				rec['approvatoda'] = globals.getUserName(operatore_id);
+	
+				if (!databaseManager.commitTransaction()) {
+					databaseManager.rollbackTransaction();
+					// codice di errore inserimento
+					return 401;
+				} else {
+	
+					/** @type {JSFoundSet<db:/ma_anagrafiche/lavoratori_giustificativirighe>}*/
+					var fsRighe = databaseManager.getFoundSet(clientDb, globals.Table.RP_RIGHE);
+					if (fsRighe.find()) {
+						fsRighe.idlavoratoregiustificativotesta = idgiustificativotesta;
+						if (fsRighe.search() > 0) {
+	
+							fsRighe.sort('giorno asc');
+							var giorno_dal = fsRighe.getRecord(1).giorno;
+							fsRighe.sort('giorno desc');
+							var giorno_al = fsRighe.getRecord(1).giorno;
+							var idEvento = fsRighe.getRecord(1).idevento;
+							var dalleOre = null;
+							var alleOre = null;
+							
+							//se la richiesta è stata confermata, inseriamo in giornaliera di budget l'evento riportato in fase di richiesta
+							if (status == 1) {
+								for (var i = 1; i <= fsRighe.getSize(); i++) {
+									var recRiga = fsRighe.getRecord(i);
+									dalleOre = recRiga.dalleore;
+									alleOre = recRiga.alleore;
+									var propPredefEvento = globals.getProprietaPredefinitaEvento(recRiga.lavoratori_giustificativirighe_to_e2eventi.ideventoclasse);
+									var evParams = globals.inizializzaParametriEvento(idDitta,
+										recRiga.giorno.getFullYear() * 100 + recRiga.giorno.getMonth() + 1,
+										0,
+										[recRiga.giorno.getDate()],
+										globals.TipoGiornaliera.BUDGET,
+										globals.TipoConnessione.CLIENTE,
+										[recRiga.idlavoratore],
+										recRiga.idevento,
+										propPredefEvento,
+										recRiga.giornointero == 0 ? recRiga.ore : 0, //verificare se giorno intero o meno
+										recRiga.importo,
+										-1,
+										'',
+										recRiga.giornointero //flag copertura orario teorico
+									)
+									var saved = salvaEventoWS(wsName, evParams, clientDb);
+	
+									if (!saved)
+									// codice di errore inserimento evento in giornaliera di budget
+										return 402;
+									
+									// Ticket #15128 rendi il giorno riconteggiabile in seguito ad inseriemnto richiesta in budget
+									globals.rendiGiorniRiconteggiabiliWS(
+										   [recRiga.idlavoratore],
+										   [recRiga.giorno.getDate()],
+										   idDitta,
+										   recRiga.giorno.getFullYear() * 100 + recRiga.giorno.getMonth() + 1,
+										   globals.TipoConnessione.CLIENTE,
+										   clientDb);
+								}
+							}
+							
+							//invia la mail con la comunicazione con il riscontro della gestione della richiesta
+							globals.gestisciInvioComunicazione(rec.datarichiesta,
+								                               rec.stato,
+															   rec.approvatoil,
+															   operatore_id,
+															   giorno_dal,
+															   giorno_al,
+															   dalleOre,
+															   alleOre,
+															   userid,
+															   idEvento,
+															   null,
+															   others_id,
+															   confirms_id,
+															   refuses_id
+															   );
+							
+														
+	                        return 200;
+	
+						} else
+						// codice di errore recupero giustificativo righe
+							return 406;
+					} else
+						// codice di errore generico (giustificativo testa find mode)
+						return 404;
+												
+				}
+	
+			}
+			// codice di errore giustificativo testa
+			return 405;
+		}
+		// codice di errore generico (giustificativo testa find mode)
+		return 404;
+	}
+	catch(ex)
+	{
+		application.output('Metodo gestisciRichiestaWS : ' + ex.message,LOGGINGLEVEL.ERROR);
+		return 407;
+	}
+
+}
+
+/**
+ * @param {String} wsUrl
+ * @param {Object} _evParams
+ * @param {String} dbName
+ * 
+ * @return {Boolean} bReturn
+ * 
+ * @properties={typeid:24,uuid:"2B0621E5-E2A8-49AB-9EDF-9D163C087F92"}
+ */
+function salvaEventoWS(wsUrl,_evParams,dbName)
+{	
+	var url = 'http://srv-epiweb/Leaf_RFP'; //(wsUrl != null && wsUrl != "") ? wsUrl : globals.RestServerLink;
+	url += "/Eventi/SalvaWS";
+	var responseObj = globals.getWebServiceResponseWS(url,_evParams,dbName);
+	return responseObj['returnValue'];
 }

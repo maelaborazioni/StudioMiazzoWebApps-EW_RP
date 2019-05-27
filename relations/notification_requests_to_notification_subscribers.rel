@@ -1,0 +1,12 @@
+allowCreationRelatedRecords:true,
+allowParentDeleteWhenHavingRelatedRecords:false,
+deleteRelatedRecords:true,
+foreignDataSource:"db:/ma_framework/notification_subscribers",
+items:[
+{foreignColumnName:"requestid",primaryDataProviderID:"id",typeid:23,uuid:"E939DE41-0903-4B16-AE16-07BDACF34295"}
+],
+joinType:1,
+name:"notification_requests_to_notification_subscribers",
+primaryDataSource:"db:/ma_framework/notification_requests",
+typeid:22,
+uuid:"09E4715E-F15D-412E-84C8-EAFBCCC2CB36"

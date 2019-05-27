@@ -1,0 +1,15 @@
+customProperties:"formComponent:false",
+encapsulation:60,
+items:[
+{
+height:480,
+partType:5,
+typeid:19,
+uuid:"3430514C-247F-4754-94BE-992E09BC031E"
+}
+],
+name:"rp_ws",
+showInMenu:true,
+styleName:"leaf_style",
+typeid:3,
+uuid:"C79A6543-E2EC-4EE2-A14D-0822EE0DF840"

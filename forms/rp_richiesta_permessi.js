@@ -169,7 +169,7 @@ function process_refresh_calendario(event,verificaFestivita) {
 	
 		globals.FiltraEventiSelezionabiliModulo(vIdLavoratore, 
 			                                    globals.CategoriaSW.RFP);
-	
+	    
 		/** @type {Array<Number>}*/
 		var arrIdEventiEffettivi = [];
 	
@@ -454,9 +454,10 @@ function validaRichiesta(fs)
 				if (!globals.validaOrarioInserito(rec['dalleore'], m30) 
 						|| !globals.validaOrarioInserito(rec['alleore'], m30)) 
 				{
+					var mMsg = m30 ? '30' : '15';
 					globals.ma_utl_showWarningDialog('Nel giorno ' + globals.dateFormat(rec['giorno'],globals.EU_DATEFORMAT) +
 						                             ' gli orari inseriti devono essere a multipli di ' +
-													 m30 ? '30' : '15' + 'minuti, come da gestione orari della ditta'		 
+													  + mMsg + ' minuti, come da gestione orari della ditta'		 
 					                                 , 'Richiesta ferie e permessi');
 					return false;
 				}
@@ -650,7 +651,11 @@ function process_richiesta_permessi(event, fs)
 		
 		/** @type {JSFoundSet<db:/ma_anagrafiche/lavoratori>}*/
 		var fsLav = databaseManager.getFoundSet(globals.Server.MA_ANAGRAFICHE, globals.Table.LAVORATORI);
-		if (fsLav.find()) {
+		/** @type {JSFoundSet<db:/ma_framework/notification_requests>}*/
+		var fsNotReq = databaseManager.getFoundSet(globals.Server.MA_FRAMEWORK, globals.Table.NOTIFICATION_REQUESTS);
+		
+		if (fsLav.find())
+		{
 			fsLav.idlavoratore = vIdLavoratore;
 			if (fsLav.search()) {
 				var fsTesta = fsLav.lavoratori_to_lavoratori_giustificativitesta;
@@ -867,22 +872,30 @@ function process_richiesta_permessi(event, fs)
 						if (fsRpGroupsInfo) {
 							for (var gr = 1; gr <= fsRpGroupsInfo.getSize(); gr++) {
 								var users = globals.getOrganizationUsers(fsRpGroupsInfo.getRecord(gr).rp_group_id.toString());
-								for (var au = 0; au < users.length; au++) {
+								for (var au = 0; au < users.length; au++) 
+								{
+									var isCessatoAu = globals.isUtenteCessato(users[au],globals.svy_sec_owner_id);
+									
 									infoTuple = [users[au], globals.getMailUtente(users[au]), 1000];
 									if (fsRpGroupsInfo.getRecord(gr).gestione_richiesta)
-									{										
-									    arrUserIdGestione.push(users[au]);
-									    if(!globals.ma_utl_userHasKey(users[au],scIdNonRicezioneMail))
-										  emailaddresses.push(infoTuple);
+									{	
+										if(!isCessatoAu)
+										{
+											arrUserIdGestione.push(users[au]);
+											if(!globals.ma_utl_userHasKey(users[au],scIdNonRicezioneMail))
+											   emailaddresses.push(infoTuple);
+										}
 									}
 									    
 									if (fsRpGroupsInfo.getRecord(gr).avviso_conferma 
 											&& users[au] != globals.svy_sec_lgn_user_id
+											&& !isCessatoAu
 											&& emailaddressesConfirm.indexOf(users[au]) == -1
 											&& !globals.ma_utl_userHasKey(users[au],scIdNonRicezioneMail))
 										emailaddressesConfirm.push(users[au]);
 									if (fsRpGroupsInfo.getRecord(gr).avviso_rifiuto 
 											&& users[au] != globals.svy_sec_lgn_user_id 
+											&& !isCessatoAu
 											&& emailaddressesRefuse.indexOf(users[au]) == -1
 											&& !globals.ma_utl_userHasKey(users[au],scIdNonRicezioneMail))
 										emailaddressesRefuse.push(users[au]);
@@ -890,6 +903,7 @@ function process_richiesta_permessi(event, fs)
 											&& emailaddressesOthers.indexOf(users[au]) == -1 
 											&& emailaddressesConfirm.indexOf(users[au]) == -1 
 											&& emailaddressesRefuse.indexOf(users[au]) == -1
+											&& !isCessatoAu
 											&& !globals.ma_utl_userHasKey(users[au],scIdNonRicezioneMail))
 										emailaddressesOthers.push(users[au]);
 								}
@@ -897,30 +911,38 @@ function process_richiesta_permessi(event, fs)
 						}
 
 						if (fsRpUsersInfo) {
-							for (var us = 1; us <= fsRpUsersInfo.getSize(); us++) {
+							for (var us = 1; us <= fsRpUsersInfo.getSize(); us++) 
+							{
+								var isCessatoUs = globals.isUtenteCessato(fsRpUsersInfo.sec_organization_to_rp_user_to_sec_user.user_id,globals.svy_sec_owner_id)
 								infoTuple = [fsRpUsersInfo.getRecord(us).rp_user_id,
 											 globals.getMailUtente(fsRpUsersInfo.getRecord(us).rp_user_id),
 											 1000];
 								if (fsRpUsersInfo.getRecord(us).gestione_richiesta)
-								{									
-									arrUserIdGestione.push(fsRpUsersInfo.getRecord(us).rp_user_id);
-									if(!globals.ma_utl_userHasKey(fsRpUsersInfo.getRecord(us).rp_user_id,scIdNonRicezioneMail))
-										  emailaddresses.push(infoTuple);
+								{				
+									if(!isCessatoUs)
+									{
+										arrUserIdGestione.push(fsRpUsersInfo.getRecord(us).rp_user_id);
+										if(!globals.ma_utl_userHasKey(fsRpUsersInfo.getRecord(us).rp_user_id,scIdNonRicezioneMail))
+											  emailaddresses.push(infoTuple);
+									}
 								}
 								if (fsRpUsersInfo.getRecord(us).avviso_conferma 
 										&& fsRpUsersInfo.getRecord(us).rp_user_id != globals.svy_sec_lgn_user_id 
 										&& emailaddressesConfirm.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1
+										&& !isCessatoUs
 										&& !globals.ma_utl_userHasKey(fsRpUsersInfo.getRecord(us).rp_user_id,scIdNonRicezioneMail))
 									emailaddressesConfirm.push(fsRpUsersInfo.getRecord(us).rp_user_id);
 								if (fsRpUsersInfo.getRecord(us).avviso_rifiuto 
 										&& fsRpUsersInfo.getRecord(us).rp_user_id != globals.svy_sec_lgn_user_id 
 										&& emailaddressesRefuse.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1
+										&& !isCessatoUs
 										&& !globals.ma_utl_userHasKey(fsRpUsersInfo.getRecord(us).rp_user_id,scIdNonRicezioneMail))
 									emailaddressesRefuse.push(fsRpUsersInfo.getRecord(us).rp_user_id);
 								if (fsRpUsersInfo.getRecord(us).rp_user_id != globals.svy_sec_lgn_user_id 
 										&& emailaddressesOthers.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1 
 										&& emailaddressesConfirm.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1 
 										&& emailaddressesRefuse.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1
+										&& !isCessatoUs
 										&& !globals.ma_utl_userHasKey(fsRpUsersInfo.getRecord(us).rp_user_id,scIdNonRicezioneMail))
 									emailaddressesOthers.push(fsRpUsersInfo.getRecord(us).rp_user_id);
 							}
@@ -931,16 +953,21 @@ function process_richiesta_permessi(event, fs)
 						// recupero del/i corretto/i indirizzo/i mail a cui inviare l'avviso di avvenuto inserimento di richiesta
 						infoSup = globals.getInfoUsersLivelliSuperiori(globals.svy_sec_lgn_user_org_id);
 
-						for (var iu = 1; iu <= infoSup.getMaxRowIndex(); iu++) {
-							if (infoSup.getValue(iu, 1) != _to_sec_user$user_id.user_id) {
+						for (var iu = 1; iu <= infoSup.getMaxRowIndex(); iu++) 
+						{
+							if (infoSup.getValue(iu, 1) != _to_sec_user$user_id.user_id)
+							{
+								var isCessatoIu = globals.isUtenteCessato(infoSup.getValue(iu,1),globals.svy_sec_owner_id);
+								
 								// array user che hanno in carico la richiesta
-								if (infoSup.getValue(iu, 5) <= livAut)
+								if (infoSup.getValue(iu, 5) <= livAut && !isCessatoIu)
 									arrUserIdGestione.push(infoSup.getValue(iu,1));
 								
 								// se l'utente di questa organizzazione non è per qualche motivo inibito alla ricezione della mail di avvenuto
 								// inserimento della nuova richiesta
 								// aggiungi il suo indirizzo all'array di indirizzi a cui mandare l'avviso
 								if (infoSup.getValue(iu, 5) <= livAut 
+										&& !isCessatoIu
 										&& !globals.ma_utl_userHasKey(infoSup.getValue(iu, 1),
 																	  scIdNonRicezioneMail,
 																	  infoSup.getValue(iu, 6),
@@ -962,7 +989,8 @@ function process_richiesta_permessi(event, fs)
 						for(var _emao = 0; _emao < emailaddressesOthers.length; _emao++)
 						{
 							var _arrEmao = [emailaddressesOthers[_emao],globals.getMailUtente(emailaddressesOthers[_emao]),null];
-							if(emailaddresses.indexOf(_arrEmao) == -1)
+							if(emailaddresses.indexOf(_arrEmao) == -1
+							   && !globals.isUtenteCessato(emailaddressesOthers[_emao],globals.svy_sec_owner_id))
 								emailaddresses.push(_arrEmao);
 						}
 					}
@@ -989,26 +1017,102 @@ function process_richiesta_permessi(event, fs)
 					// gestione della fase di invio della mail (se necessario)
 					if(invioMail)
 					{
-						for (var e = 0; e < emailaddresses.length; e++) {
+						// creazione dei records nelle tabelle di notification
+						databaseManager.startTransaction();
+						
+						/** @type{JSRecord<db:/ma_framework/notification_requests>}*/
+						var fsNotReqRec = fsNotReq.getRecord(fsNotReq.newRecord());
+						fsNotReqRec.referenceid = idLavoratoreGiustificativoTesta;
+						fsNotReqRec.catalogname = globals.customer_dbserver_name;
+						fsNotReqRec.userid = _to_sec_user$user_id.user_id;
+						
+						var dsSubs = databaseManager.createEmptyDataSet(0,['user','manager','confirm','refuse']);
+						var dsi = 0;
+						var size = 0;
+						var arrGen = [];					
+						for (var e = 0; e < emailaddresses.length; e++) 
+						{
+						    if(arrGen.indexOf(emailaddresses[e[0]]) == -1)
+						       arrGen.push(emailaddresses[e][0]);
+						}						
+												
+						for (var conf = 0; conf < emailaddressesConfirm.length; conf++)
+						{
+							if(arrGen.indexOf(emailaddressesConfirm[conf]) == -1)
+							   arrGen.push(emailaddressesConfirm[conf]);
+						}
+						
+						for (var rej = 0; rej < emailaddressesRefuse.length; rej++)
+						{
+							if(arrGen.indexOf(emailaddressesRefuse[rej]) == -1)
+							   arrGen.push(emailaddressesRefuse[rej]);
+						}
+						
+						for (var oth = 0; oth < emailaddressesOthers.length; oth++)
+						{
+							if(arrGen.indexOf(emailaddressesOthers[oth]) == -1)
+							   arrGen.push(emailaddressesOthers[oth]);
+						}
+						
+						for (var ag = 0; ag < arrGen.length; ag++)
+							dsSubs.addRow([arrGen[ag],0,0,0]);
+						
+						for (e = 0; e < emailaddresses.length; e++) 
+						{
+						    size = dsSubs.getMaxRowIndex();
+							for(dsi = 1; dsi <= size; dsi++)
+							{
+								if(dsSubs.getValue(dsi,1) == emailaddresses[e][0])
+								   dsSubs.setValue(dsi,2,1);								
+							}
+						}						
+												
+						for (conf = 0; conf < emailaddressesConfirm.length; conf++)
+						{
+							size = dsSubs.getMaxRowIndex();
+							for(dsi = 1; dsi <= size; dsi++)
+							{
+								if(dsSubs.getValue(dsi,1) == emailaddressesConfirm[conf])
+								   dsSubs.setValue(dsi,3,1);	
+							}
+						}
+						
+						for (rej = 0; rej < emailaddressesRefuse.length; rej++)
+						{
+							size = dsSubs.getMaxRowIndex();
+							for(dsi = 1; dsi <= size; dsi++)
+							{
+								if(dsSubs.getValue(dsi,1) == emailaddressesRefuse[rej])
+								   dsSubs.setValue(dsi,4,1);							    
+							}
+						}
+						
+						for(dsi = 1; dsi <= dsSubs.getMaxRowIndex(); dsi++)
+						{
+							var fsNotSubRec = fsNotReqRec.notification_requests_to_notification_subscribers.getRecord(fsNotReqRec.notification_requests_to_notification_subscribers.newRecord());
+							fsNotSubRec.userid = dsSubs.getValue(dsi,1);
+							fsNotSubRec.manager = dsSubs.getValue(dsi,2);
+							fsNotSubRec.confirmed = dsSubs.getValue(dsi,3);
+							fsNotSubRec.rejected = dsSubs.getValue(dsi,4);
+						}
+												
+						if(!databaseManager.commitTransaction())
+							throw new Error("Errore in inserimento nelle tabelle di notification, la richiesta è  stata inserita ma le comunicazioni non sono state inviate");
+						/////////////////////////////////////////////////////////////////////////////////////
+						
+						for (e = 0; e < emailaddresses.length; e++) 
+						{	
+							// creazione new link (ricordarsi di aggiungere il parametro per lo stato)
+							var url = globals.RfpServerLink + "/api/RequestManager/demand/managedemand?reference=" + fsNotReqRec.referenceid +"&user=" + emailaddresses[e][0];
+							
 							// costruzione intestazione e testo mail
-							var subject = (bSubjectNom ? globals.getNominativo(vIdLavoratore) + " - " : "") + "Comunicazione nuova richiesta ferie e permessi - Presenza Semplice Studio Miazzo";
-							var subjectEn = "Advice for new request - Presenza Semplice Studio Miazzo";
+							var subject = (bSubjectNom ? globals.getNominativo(vIdLavoratore) + " - " : "") + "Comunicazione nuova richiesta ferie e permessi - Presenza Semplice";
+							var subjectEn = "Advice for new request - Presenza Semplice";
 							var msgText = "<html>";
 							msgText += "<head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"></head>";
 							msgText += "<body>";
 							var msgTextEn = msgText; //'<i>English version : </i><br/><p style = "font-size:14px">';
 
-							// link per il servizio di gestione richiesta con restful web service
-							var url = globals.RfpServerLink + //"https://webapp.studiomiazzo.it" + 
-							          "/rp_servlet?idgiustificativotesta=" + idLavoratoreGiustificativoTesta + 
-									  "&cliente=" + globals.customer_dbserver_name + 
-									  "&operatore=" + emailaddresses[e][0] + 
-									  "&wsurl=" + globals.WS_RFP_URL + 
-									  "&userid=" + _to_sec_user$user_id.user_id + 
-									  "&othersid=" + emailaddressesOthers.join(',') + 
-									  "&confirmsid=" + emailaddressesConfirm.join(',') + 
-									  "&refusesid=" + emailaddressesRefuse.join(',');
-	
 							if (emailaddresses[e] && plugins.mail.isValidEmailAddress(emailaddresses[e][1])) {
 								msgText += "Gentile <b>" + globals.getUserName(emailaddresses[e][0]) + "</b>, <br/> con la presente le comunichiamo l\'inserimento di una nuova richiesta di ";
 								msgTextEn += "Dear <b>" + globals.getUserName(emailaddresses[e][0]) + "</b>, <br/> we inform you that a new request of <i>" + globals.getDescrizioneEvento(recRiga.idevento) + "</i>  has been inserted ";
@@ -1048,15 +1152,15 @@ function process_richiesta_permessi(event, fs)
 								msgTextEn += '<br/><br/>';
 
 								if (!bAutoApprovazione && (emailaddresses[e][2] == 1000 || (livAut != undefined && emailaddresses[e][2] == livAut))) {
-									msgText += '<a href= ' + url + "&status=1" + '>Confermare richiesta</a>';
+									msgText += '<a href=\"' + url + '&status=1\"' + '>Confermare richiesta</a>';
 									msgText += '<br/>';
-									msgText += '<a href=' + url + "&status=2" + '>Rifiutare richiesta</a>';
-									msgText += "<br/><br/>In alternativa collegarsi all\'<a href='https://webapp.studiomiazzo.it/login.html'>applicazione</a> per la gestione delle richieste."
+									msgText += '<a href=\"' + url + '&status=2\"' + '>Rifiutare richiesta</a>';
+									msgText += "<br/><br/>In alternativa collegarsi all\'<a href=\"https://webapp.peoplegest.it/login.html\">applicazione</a> per la gestione delle richieste."
 
-									msgTextEn += '<a href= ' + url + "&status=1" + '>Confirm request</a>';
+									msgTextEn += '<a href=\"' + url + '&status=1\"' + '>Confirm request</a>';
 									msgTextEn += '<br/>';
-									msgTextEn += '<a href=' + url + "&status=2" + '>Refuse request</a>';
-									msgTextEn += "<br/><br/>Alternatively you can go to the <a href='https://webapp.studiomiazzo.it/login.html'>application</a> to handle the requests."
+									msgTextEn += '<a href=\"' + url + '&status=2\"' + '>Refuse request</a>';
+									msgTextEn += "<br/><br/>Alternatively you can go to the <a href=\"https:/webapp.peoplegest.it/login.html\">application</a> to handle the requests."
 								}
 
 								// msgTextEn += '</p>';
@@ -1069,7 +1173,7 @@ function process_richiesta_permessi(event, fs)
 								// invio effettivo della mail
 								if (!plugins.mail.sendMail
 								(emailaddresses[e][1],
-									'Ferie e permessi <assistenza@studiomiazzo.it>',
+									'Ferie e permessi <noreply@peoplegest.it>',
 									englishLang ? subjectEn : subject,
 									englishLang ? msgTextEn : msgText,
 									null,
@@ -1095,6 +1199,7 @@ function process_richiesta_permessi(event, fs)
 							} else
 								globals.ma_utl_showWarningDialog(emailaddresses[e][1] + ' : ' + 'i18n:ma.msg.notValidEmailAddress', 'Comunicazione gestione richiesta');
 						}
+						
 					}
 				}
 				// nel primo caso la mail va inviata al/i superiore/i nel secondo al dipendente
@@ -1126,22 +1231,30 @@ function process_richiesta_permessi(event, fs)
 							if (fsRpGroupsInfo) {
 								for (var _gr = 1; _gr <= fsRpGroupsInfo.getSize(); _gr++) {
 									var _users = globals.getOrganizationUsers(fsRpGroupsInfo.getRecord(_gr).rp_group_id.toString());
-									for (var _au = 0; _au < _users.length; _au++) {
+									for (var _au = 0; _au < _users.length; _au++) 
+									{
+										var isCessato_Au = globals.isUtenteCessato(_users[_au],globals.svy_sec_owner_id);
+										
 										infoTuple = [_users[_au], globals.getMailUtente(_users[_au]), 1000];
 										if (fsRpGroupsInfo.getRecord(_gr).gestione_richiesta)
 										{
-											arrUserIdGestione.push(_users[_au]);
-											if(!globals.ma_utl_userHasKey(_users[_au],scIdNonRicezioneMail))
-												  emailaddresses.push(infoTuple);											
+											if(!isCessato_Au)
+											{
+												arrUserIdGestione.push(_users[_au]);
+												if(!globals.ma_utl_userHasKey(_users[_au],scIdNonRicezioneMail))
+													  emailaddresses.push(infoTuple);
+											}
 										}
 										if (fsRpGroupsInfo.getRecord(_gr).avviso_conferma 
 												&& _users[_au] != globals.svy_sec_lgn_user_id
 												&& emailaddressesConfirm.indexOf(_users[_au]) == -1
+												&& !isCessato_Au
 												&& !globals.ma_utl_userHasKey(_users[_au],scIdNonRicezioneMail))
 											emailaddressesConfirm.push(_users[_au]);
 										if (fsRpGroupsInfo.getRecord(_gr).avviso_rifiuto 
 												&& _users[_au] != globals.svy_sec_lgn_user_id 
 												&& emailaddressesRefuse.indexOf(_users[_au]) == -1
+												&& !isCessato_Au
 												&& !globals.ma_utl_userHasKey(_users[_au],scIdNonRicezioneMail))
 											emailaddressesRefuse.push(_users[_au]);
 										if (_users[_au] != globals.svy_sec_lgn_user_id 
@@ -1149,6 +1262,7 @@ function process_richiesta_permessi(event, fs)
 												&& emailaddressesConfirm.indexOf(_users[_au]) == -1 
 												&& emailaddressesRefuse.indexOf(_users[_au]) == -1 
 												&& emailaddressesOthers.indexOf(_users[_au]) == -1
+												&& !isCessato_Au
 												&& !globals.ma_utl_userHasKey(_users[_au],scIdNonRicezioneMail))
 											emailaddressesOthers.push(_users[_au]);
 									}
@@ -1157,23 +1271,31 @@ function process_richiesta_permessi(event, fs)
 							}
 
 							if (fsRpUsersInfo) {
-								for (var _us = 1; _us <= fsRpUsersInfo.getSize(); _us++) {
+								for (var _us = 1; _us <= fsRpUsersInfo.getSize(); _us++) 
+								{
+									var isCessato_Us = globals.isUtenteCessato(fsRpUsersInfo.getRecord(_us).rp_user_id,globals.svy_sec_owner_id);
+									
 									infoTuple = [fsRpUsersInfo.getRecord(_us).rp_user_id,
 									             globals.getMailUtente(fsRpUsersInfo.getRecord(_us).rp_user_id), 1000];
 									if (fsRpUsersInfo.getRecord(_us).gestione_richiesta)
-									{										
-										arrUserIdGestione.push(fsRpUsersInfo.getRecord(_us).rp_user_id);
-										if(!globals.ma_utl_userHasKey(fsRpUsersInfo.getRecord(_us).rp_user_id,scIdNonRicezioneMail))
-										emailaddresses.push(infoTuple);
+									{				
+										if(!isCessato_Us)
+										{
+											arrUserIdGestione.push(fsRpUsersInfo.getRecord(_us).rp_user_id);
+											if(!globals.ma_utl_userHasKey(fsRpUsersInfo.getRecord(_us).rp_user_id,scIdNonRicezioneMail))
+											emailaddresses.push(infoTuple);
+										}
 									}
 									if (fsRpUsersInfo.getRecord(_us).avviso_conferma 
 											&& fsRpUsersInfo.getRecord(_us).rp_user_id != globals.svy_sec_lgn_user_id 
 											&& emailaddressesConfirm.indexOf(fsRpUsersInfo.getRecord(_us).rp_user_id) == -1
+											&& !isCessato_Us
 											&& !globals.ma_utl_userHasKey(fsRpUsersInfo.getRecord(_us).rp_user_id,scIdNonRicezioneMail))
 										emailaddressesConfirm.push(fsRpUsersInfo.getRecord(_us).rp_user_id);
 									if (fsRpUsersInfo.getRecord(_us).avviso_rifiuto 
 											&& fsRpUsersInfo.getRecord(_us).rp_user_id != globals.svy_sec_lgn_user_id 
 											&& emailaddressesRefuse.indexOf(fsRpUsersInfo.getRecord(_us).rp_user_id) == -1
+											&& !isCessato_Us
 											&& !globals.ma_utl_userHasKey(fsRpUsersInfo.getRecord(_us).rp_user_id,scIdNonRicezioneMail))
 										emailaddressesRefuse.push(fsRpUsersInfo.getRecord(_us).rp_user_id);
 									if (fsRpUsersInfo.getRecord(_us).rp_user_id != globals.svy_sec_lgn_user_id 
@@ -1181,6 +1303,7 @@ function process_richiesta_permessi(event, fs)
 											&& emailaddressesConfirm.indexOf(fsRpUsersInfo.getRecord(_us).rp_user_id) == -1 
 											&& emailaddressesRefuse.indexOf(fsRpUsersInfo.getRecord(_us).rp_user_id) == -1 
 											&& emailaddressesOthers.indexOf(fsRpUsersInfo.getRecord(_us).rp_user_id) == -1
+											&& !isCessato_Us
 											&& !globals.ma_utl_userHasKey(fsRpUsersInfo.getRecord(_us).rp_user_id,scIdNonRicezioneMail))
 										emailaddressesOthers.push(fsRpUsersInfo.getRecord(_us).rp_user_id);
 								}
@@ -1193,9 +1316,13 @@ function process_richiesta_permessi(event, fs)
 //								globals.svy_sec_lgn_user_id,
 //								_to_sec_user$user_id.sec_user_to_sec_user_org.sec_user_org_to_sec_user_in_group.sec_user_in_group_to_sec_group.group_id);
 							var infoSupGest = globals.getInfoUsersLivelliSuperiori(globals.svy_sec_lgn_user_org_id);
-							for (var ig = 1; ig <= infoSupGest.getMaxRowIndex(); ig++) {
-								if (infoSupGest.getValue(ig, 1) != _to_sec_user$user_id.user_id && globals.ma_utl_getOwnerFromUserOrgId(infoSupGest.getValue(ig, 4)) == globals.svy_sec_lgn_owner_id) {
-									if (infoSupGest.getValue(ig, 5) <= livAut)
+							for (var ig = 1; ig <= infoSupGest.getMaxRowIndex(); ig++) 
+							{
+								if (infoSupGest.getValue(ig, 1) != _to_sec_user$user_id.user_id 
+									&& globals.ma_utl_getOwnerFromUserOrgId(infoSupGest.getValue(ig, 4)) == globals.svy_sec_lgn_owner_id)
+								{
+									if (infoSupGest.getValue(ig, 5) <= livAut
+										&& !globals.isUtenteCessato(infoSupGest.getValue(ig,1),globals.svy_sec_lgn_owner_id))
 										arrUserIdGestione.push(infoSupGest.getValue(ig,1));
 									// se 1- il livello superiore rientra negli n livelli di profondità a cui cercare (di default il livello è pari a 1,
 									//      altrimenti è indicato dal possesso delle chiavi del tipo RICHIESTA_PERMESSI_n_LIV)
@@ -1203,6 +1330,7 @@ function process_richiesta_permessi(event, fs)
 									//      inserimento della nuova richiesta
 									// aggiungi il suo indirizzo all'array di indirizzi a cui mandare l'avviso
 									if (infoSupGest.getValue(ig, 5) <= livAut 
+											&& !globals.isUtenteCessato(infoSupGest.getValue(ig,1),globals.svy_sec_lgn_owner_id)
 											&& !globals.ma_utl_userHasKey(infoSupGest.getValue(ig, 1),
 												                          scIdNonRicezioneMail,
 																		  infoSupGest.getValue(ig, 6),
@@ -1234,6 +1362,7 @@ function process_richiesta_permessi(event, fs)
 							null];
 						// richiedi se inviare una comunicazione al dipendente solo se questi non ha la chiave di non ricezione 
 						if (userDipId
+							&& !globals.isUtenteCessato(userDipId,globals.svy_sec_lgn_owner_id)	
 				            && !globals.ma_utl_userHasKey(userDipId,
 				            							  globals.ma_utl_getSecurityKeyId(globals.Key.NON_INVIARE_MAIL))) {
 							var answerRicGestore = globals.ma_utl_showYesNoQuestion('Inviare una mail di conferma inserimento al dipendente?', 'Invio mail per richiesta inserita');
@@ -1249,8 +1378,10 @@ function process_richiesta_permessi(event, fs)
 						for(var emao = 0; emao < emailaddressesOthers.length; emao++)
 						{
 							var arrEmao = [emailaddressesOthers[emao],globals.getMailUtente(emailaddressesOthers[emao]),null];
-							if(emailaddresses.indexOf(arrEmao) == -1 && !globals.ma_utl_userHasKey(emailaddressesOthers[emao],scIdNonRicezioneMail))
-								emailaddresses.push(arrEmao);
+							if(emailaddresses.indexOf(arrEmao) == -1 
+							   && !globals.isUtenteCessato(emailaddressesOthers[emao],globals.svy_sec_owner_id)
+							   && !globals.ma_utl_userHasKey(emailaddressesOthers[emao],scIdNonRicezioneMail))
+							   emailaddresses.push(arrEmao);
 						}
 					}
 									
@@ -1288,29 +1419,103 @@ function process_richiesta_permessi(event, fs)
 					// gestione della fase di invio della mail (se necessario)
 					if(invioMail)
 					{
+						// creazione dei records nelle tabelle di notification
+						databaseManager.startTransaction();
+						
+						var fsNotReqCrRec = fsNotReq.getRecord(fsNotReq.newRecord());
+						fsNotReqCrRec.referenceid = idLavoratoreGiustificativoTesta;
+						fsNotReqCrRec.catalogname = globals.customer_dbserver_name;
+						fsNotReqCrRec.userid = _to_sec_user$user_id.user_id;
+						
+						var dsSubsCr = databaseManager.createEmptyDataSet(0,['user','manager','confirm','refuse']);
+						var dsiCr = 0;
+						var sizeCr = 0;
+						
+						var arrGenCr = [];					
+						for (var eCr = 0; eCr < emailaddresses.length; eCr++) 
+						{
+						    if(arrGenCr.indexOf(emailaddresses[eCr][0]) == -1)
+						       arrGenCr.push(emailaddresses[eCr][0]);
+						}						
+												
+						for (var confCr = 0; confCr < emailaddressesConfirm.length; confCr++)
+						{
+							if(arrGenCr.indexOf(emailaddressesConfirm[confCr]) == -1)
+							   arrGenCr.push(emailaddressesConfirm[confCr]);
+						}
+						
+						for (var rejCr = 0; rejCr < emailaddressesRefuse.length; rejCr++)
+						{
+							if(arrGenCr.indexOf(emailaddressesRefuse[rejCr]) == -1)
+							   arrGenCr.push(emailaddressesRefuse[rejCr]);
+						}
+						
+						for (var othCr = 0; othCr < emailaddressesOthers.length; othCr++)
+						{
+							if(arrGenCr.indexOf(emailaddressesOthers[othCr]) == -1)
+							   arrGenCr.push(emailaddressesOthers[othCr]);
+						}
+						
+						for (var agCr = 0; agCr < arrGenCr.length; agCr++)
+							dsSubsCr.addRow([arrGenCr[agCr],0,0,0]);
+																								
+						for (eCr = 0; eCr < emailaddresses.length; eCr++) 
+						{
+						    sizeCr = dsSubsCr.getMaxRowIndex();
+							for(dsiCr = 1; dsiCr <= size; dsiCr++)
+							{
+								if(dsSubsCr.getValue(dsiCr,1) == emailaddresses[eCr][0])
+								   dsSubsCr.setValue(dsiCr,2,1);
+							}
+						}						
+												
+						for (confCr = 0; confCr < emailaddressesConfirm.length; confCr++)
+						{
+							sizeCr = dsSubsCr.getMaxRowIndex();
+							for(dsiCr = 1; dsiCr <= size; dsiCr++)
+							{
+								if(dsSubsCr.getValue(dsiCr,1) == emailaddressesConfirm[confCr])
+								   dsSubsCr.setValue(dsiCr,3,1);								    
+							}
+						}
+						
+						for (rejCr = 0; rejCr < emailaddressesRefuse.length; rejCr++)
+						{
+							sizeCr = dsSubsCr.getMaxRowIndex();
+							for(dsiCr = 1; dsiCr <= size; dsiCr++)
+							{
+								if(dsSubsCr.getValue(dsiCr,1) == emailaddressesRefuse[rejCr])
+								   dsSubsCr.setValue(dsiCr,4,1);
+							}
+						}
+						
+						for(dsiCr = 1; dsiCr <= dsSubsCr.getMaxRowIndex(); dsiCr++)
+						{
+							var fsNotSubCrRec = fsNotReqCrRec.notification_requests_to_notification_subscribers.getRecord(fsNotReqCrRec.notification_requests_to_notification_subscribers.newRecord());
+							fsNotSubCrRec.userid = dsSubsCr.getValue(dsiCr,1);
+							fsNotSubCrRec.manager = dsSubsCr.getValue(dsiCr,2);
+							fsNotSubCrRec.confirmed = dsSubsCr.getValue(dsiCr,3);
+							fsNotSubCrRec.rejected = dsSubsCr.getValue(dsiCr,4);
+						}
+						
+						if(!databaseManager.commitTransaction())
+							throw new Error("Errore in inserimento nelle tabelle di notification, la richiesta è  stata inserita ma le comunicazioni non sono state inviate");
+						/////////////////////////////////////////////////////////////////////////////////////
 						// ciclo per l'invio delle mail verso coloro che dovranno gestire la richiesta
 						for (var m = 0; m < emailaddresses.length; m++) {
-							if (emailaddresses[m] && plugins.mail.isValidEmailAddress(emailaddresses[m][1])) {
-
+							if (emailaddresses[m] && plugins.mail.isValidEmailAddress(emailaddresses[m][1])) 
+							{
+								// creazione new link (ricordarsi di aggiungere il parametro per lo stato)
+								var urlCr = globals.RfpServerLink + "/api/RequestManager/demand/managedemand?reference=" + fsNotReqCrRec.referenceid +"&user=" + emailaddresses[m][0];
+								
 								// costruzione intestazione e testo mail
-								var subjectCr = (bSubjectNom ? globals.getNominativo(vIdLavoratore) + " - " : "") + "Comunicazione nuova richiesta ferie e permessi - Presenza Semplice Studio Miazzo";
-								var subjectCrEn = "Advice for new request - Presenza Semplice Studio Miazzo";
+								var subjectCr = (bSubjectNom ? globals.getNominativo(vIdLavoratore) + " - " : "") + "Comunicazione nuova richiesta ferie e permessi - Presenza Semplice";
+								var subjectCrEn = "Advice for new request - Presenza Semplice";
 								var msgTextCr = "<html>";
 								msgTextCr += "<head><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"></head>";
 								msgTextCr += "<body>";
 								var msgTextCrEn = msgTextCr; //"<i>English version : </i><br/><p style = \"font-size\":8px>";
-
-								// link per il servizio di gestione richiesta con restful web service
-								var urlCr = globals.RfpServerLink + //application.getServerURL() + 
-								            "/rp_servlet?idgiustificativotesta=" + idLavoratoreGiustificativoTesta +
-											"&cliente=" + globals.customer_dbserver_name +
-											"&operatore=" + ( (bAutoRichiesta || bApprovazioneDisabilitata) ? emailaddresses[m][0] : _to_sec_user$user_id.user_id) + 
-											"&wsurl=" + globals.WS_RFP_URL + 
-											"&userid=" + (bAutoRichiesta ? _to_sec_user$user_id.user_id : globals.getUserIdFromIdLavoratore(vIdLavoratore, globals.svy_sec_lgn_owner_id)) + 
-											"&othersid=" + emailaddressesOthers.join(',') + 
-											"&confirmsid=" + emailaddressesConfirm.join(',') + 
-											"&refusesid=" + emailaddressesRefuse.join(',');
-
+								
 								msgTextCr += "Gentile <b>" + globals.getUserName(emailaddresses[m][0]) + "</b> <br/> con la presente le comunichiamo l\'avvenuto inserimento di una nuova ";
 								msgTextCrEn += "Dear <b>" + globals.getUserName(emailaddresses[m][0]) + "</b> <br/> we inform you that has been inserted a new ";
 
@@ -1358,15 +1563,15 @@ function process_richiesta_permessi(event, fs)
 								msgTextCrEn += '<br/><br/>';
 
 								if (!bAutoApprovazione && (emailaddresses[m][2] == 1000 || (livAut != undefined && emailaddresses[m][2] == livAut))) {
-									msgTextCr += '<a href= ' + urlCr + "&status=1" + '>Confermare richiesta</a>';
+									msgTextCr += '<a href=\"' + urlCr + '&status=1\"' + '>Confermare richiesta</a>';
 									msgTextCr += '<br/><br/>';
-									msgTextCr += '<a href=' + urlCr + "&status=2" + '>Rifiutare richiesta</a>';
-									msgTextCr += "<br/><br/><br/>In alternativa collegarsi all\'<a href='https://webapp.studiomiazzo.it/login.html'>applicazione</a> per la gestione delle richieste."
+									msgTextCr += '<a href=\"' + urlCr + '&status=2\"' + '>Rifiutare richiesta</a>';
+									msgTextCr += "<br/><br/><br/>In alternativa collegarsi all\'<a href=\"https://webapp.peoplegest.it/login.html\">applicazione</a> per la gestione delle richieste."
 
-									msgTextCrEn += '<a href= ' + urlCr + "&status=1" + '>Confirm request</a>';
+									msgTextCrEn += '<a href=\"' + urlCr + '&status=1\"' + '>Confirm request</a>';
 									msgTextCrEn += '<br/><br/>';
-									msgTextCrEn += '<a href=' + urlCr + "&status=2" + '>Refuse request</a>';
-									msgTextCrEn += "<br/><br/><br/>Alternatively, go to the <a href='https://webapp.studiomiazzo.it/login.html'>application</a> to handle the requests."
+									msgTextCrEn += '<a href=\"' + urlCr + '&status=2\"' + '>Refuse request</a>';
+									msgTextCrEn += "<br/><br/><br/>Alternatively, go to the <a href=\"https://webapp.peoplegest.it/login.html\">application</a> to handle the requests."
 								}
 
 								//							msgTextCrEn += '</p>';
@@ -1378,7 +1583,7 @@ function process_richiesta_permessi(event, fs)
 
 								if (!plugins.mail.sendMail
 								(emailaddresses[m][1],
-									'Ferie e permessi <assistenza@studiomiazzo.it>',
+									'Ferie e permessi <noreply@peoplegest.it>',
 									englishLangCr ? subjectCrEn : subjectCr,
 									englishLangCr ? msgTextCrEn : msgTextCr,
 									null,
@@ -1456,7 +1661,6 @@ function annullaNuovaRichiesta(event)
 }
 
 /**
- * TODO generated, please specify type and doc for the params
  * @param event
  *
  * @properties={typeid:24,uuid:"CB447BD3-101E-4A56-AE1C-B3283F77838B"}

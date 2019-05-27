@@ -236,6 +236,9 @@ function onActionConferma(event)
 function onShowForm(_firstShow, _event) 
 {
 	_super.onShowForm(_firstShow, _event);
+	
+	databaseManager.setAutoSave(false);
+	
 	if(isEdit)
 	{
 		elements.fld_codice.enabled = false;

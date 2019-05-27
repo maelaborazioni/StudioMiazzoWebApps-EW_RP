@@ -121,7 +121,7 @@ function updateStatoRichiesta(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,e
 //			    msgText += "</html>";
 		    var success = plugins.mail.sendMail
 			                      (emailaddress, 
-			                       'Gestore ferie e permessi <assistenza@studiomiazzo.it>',
+			                       'Gestore ferie e permessi <noreply@peoplegest.it>',
 								   subject, 
 			                       msgText,
 								   null,
