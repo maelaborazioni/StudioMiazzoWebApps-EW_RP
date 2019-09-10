@@ -23,6 +23,8 @@ function ws_read()
 	if(fsNotReq.find())
 	{
 		fsNotReq.referenceid = referenceId;
+		fsNotReq.catalogname = 'Cliente_' + globals.getCatalogFromOwner(globals.getUserOwner(userId));
+		
 		if(fsNotReq.search())
 		{
 			var fsNotReqSubConf = globals.getNotificationSubscriberConfirms(fsNotReq.id.toString());
@@ -104,12 +106,19 @@ function ws_read()
 				object.message = "";
 				object.message_en = "";
 				break;
-			}
-			
+			}			
 			// TODO ma a questo punto è necessario eliminare?!?
 //			if(object.code == 200)
 //				// eliminazione records di operatiorequest con la requestid fornita
 //				globals.deleteOpRequestRecs(fsOpReq.request_id);			
+		}
+		else
+		{
+			object.code = 407;
+			object.message = "Errore durante la gestione della richiesta. Specifica della richiesta non trovata.\
+			          Controllare dall'interno dell'applicazione o contattare il servizio di assistenza";
+			object.message_en = "Error during request's handling. Request's specification not found.\
+			             Log on to the application to verify the request or contact the customer service";
 		}
 	}
 	

@@ -752,12 +752,12 @@ function process_richiesta_permessi(event, fs)
 				if (!success) {
 					var failedrecords = databaseManager.getFailedRecords();
 					
-					databaseManager.rollbackTransaction(true);
-										
 					if (failedrecords && failedrecords.length > 0) {
 						for (var f = 0; f < failedrecords.length; f++)
 							application.output(failedrecords[f].exception.getErrorCode() + ' - ' + failedrecords[f].exception.getMessage(), LOGGINGLEVEL.WARNING);
 					}
+					
+					databaseManager.rollbackTransaction(true);
 					
 					throw new Error('Errore durante il salvataggio della richiesta. Provare a rieffettuare l\'inserimento o contattare il servizio di assistenza ');
 				}
