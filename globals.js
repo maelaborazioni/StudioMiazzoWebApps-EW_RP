@@ -744,8 +744,7 @@ function gestisciRichiesta(idgiustificativotesta, status, inviaMail, noteRispost
 				    	globals.ma_utl_showWarningDialog(globals.getHtmlString('Esiste una fascia precedentemente programmata per il giorno ' + globals.dateFormat(recRigaPre.giorno,globals.EU_DATEFORMAT) + ', non è possibile inserire la richiesta'), 'Validazione richiesta permessi');
                         return;
 				    }
-				}
-				
+				}				
 			}
 			
 			if (!databaseManager.commitTransaction()) 
@@ -833,7 +832,7 @@ function gestisciRichiesta(idgiustificativotesta, status, inviaMail, noteRispost
 						globals.gestisciInvioComunicazione(rec.datarichiesta,
 								                          rec.stato,
 														  rec.approvatoil,
-														  _to_sec_user$user_id.user_id,
+														  _to_sec_user$user_id.user_id || security.getUserUID(),
 														  rec.giorno_dal,
 														  rec.giorno_al,
 														  rec.lavoratori_giustificativitesta_to_lavoratori_giustificativirighe.dalleore,
@@ -2932,7 +2931,7 @@ function gestisciRichiestaWS(clientDb, idgiustificativotesta, operatore_id, stat
 									// codice di errore inserimento evento in giornaliera di budget
 										return 402;
 									
-									// Ticket #15128 rendi il giorno riconteggiabile in seguito ad inseriemnto richiesta in budget
+									// Ticket #15128 rendi il giorno riconteggiabile in seguito ad inserimento richiesta in budget
 									globals.rendiGiorniRiconteggiabiliWS(
 										   [recRiga.idlavoratore],
 										   [recRiga.giorno.getDate()],
