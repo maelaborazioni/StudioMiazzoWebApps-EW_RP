@@ -2270,6 +2270,10 @@ function ottieniDataSetRateiReparto(arrDip,allaData,soloRateiDipendente)
 											Lavoratori L \
 										WHERE \
 											idLavoratore IN (" + arrDip.map(function (d){return d}).join(',') + ") \
+										AND \
+										L.Assunzione <= ? \
+										AND \
+										(L.Cessazione IS NULL OR L.Cessazione >= ?) \
 									) AS L \
 									LEFT JOIN Ditte_Ratei DR \
 									ON L.idDitta = DR.IdDitta \
@@ -2346,7 +2350,7 @@ function ottieniDataSetRateiReparto(arrDip,allaData,soloRateiDipendente)
 	    
 	var vArr = new Array();
         var allaDataIso = utils.dateFormat(allaData,globals.ISO_DATEFORMAT);
-        vArr.push(allaDataIso,allaDataIso,allaDataIso,allaDataIso,allaDataIso,allaDataIso,allaDataIso);
+        vArr.push(allaDataIso,allaDataIso,allaDataIso,allaDataIso,allaDataIso,allaDataIso,allaDataIso,allaDataIso,allaDataIso);
     var vDatasetRateiDip = databaseManager.getDataSetByQuery(globals.Server.MA_PRESENZE, vQuery, vArr, -1);    
         vDatasetRateiDip.addColumn('ResiduoAnnoPrec',vDatasetRateiDip.getMaxColumnIndex() + 1,JSColumn.NUMBER);
     
@@ -2452,7 +2456,7 @@ function getProprietaPredefinitaEvento(idEventoClasse)
 	if(fsEventi.find())
 	{
 		fsEventi.ideventoclasse = idEventoClasse;
-		fsEventi.predefinito = 1
+		fsEventi.predefinito = 1;
 		if(fsEventi.search())
 		   return fsEventi.codiceproprieta;
 	}
@@ -2909,7 +2913,8 @@ function gestisciRichiestaWS(clientDb, idgiustificativotesta, operatore_id, stat
 									var recRiga = fsRighe.getRecord(i);
 									dalleOre = recRiga.dalleore;
 									alleOre = recRiga.alleore;
-									var propPredefEvento = globals.getProprietaPredefinitaEvento(recRiga.lavoratori_giustificativirighe_to_e2eventi.ideventoclasse);
+									// Ticket 17552 - Per l'evento \FS capita che venga messa come predefinita la proprietà DL invece che quella di default vuota 
+									var propPredefEvento = globals.getProprietaPredefinitaEvento(globals.getClasseEvento(recRiga.idevento));
 									var evParams = globals.inizializzaParametriEvento(idDitta,
 										recRiga.giorno.getFullYear() * 100 + recRiga.giorno.getMonth() + 1,
 										0,

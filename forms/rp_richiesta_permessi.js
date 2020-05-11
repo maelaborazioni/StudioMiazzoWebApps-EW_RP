@@ -824,10 +824,11 @@ function process_richiesta_permessi(event, fs)
 					// allora viene confermata automaticamente la richiesta inserita
 					if (bAutoApprovazione
 						||	(vIsGestore 
-							&& !bAutoRichiesta 
+							&& !bAutoRichiesta
+							// TODO
+							&& !bApprovazioneDisabilitata
 							&& solutionModel.getForm('rp_elenco_richieste_situazione')))
 						globals.gestisciRichiesta(idLavoratoreGiustificativoTesta, 1, false);
-
 				}
 								
 				var emailaddresses = [];
@@ -876,16 +877,20 @@ function process_richiesta_permessi(event, fs)
 								{
 									var isCessatoAu = globals.isUtenteCessato(users[au],globals.svy_sec_owner_id);
 									
-									infoTuple = [users[au], globals.getMailUtente(users[au]), 1000];
-									if (fsRpGroupsInfo.getRecord(gr).gestione_richiesta)
-									{	
-										if(!isCessatoAu)
-										{
-											arrUserIdGestione.push(users[au]);
-											if(!globals.ma_utl_userHasKey(users[au],scIdNonRicezioneMail))
-											   emailaddresses.push(infoTuple);
-										}
+									infoTuple = [
+													users[au],
+													globals.getMailUtente(users[au]),
+													fsRpGroupsInfo.getRecord(gr).gestione_richiesta ? 1000 : 999
+												];
+									
+									if(!isCessatoAu)
+									{
+										if(fsRpGroupsInfo.getRecord(gr).gestione_richiesta)
+										   arrUserIdGestione.push(users[au]);
+										if(!globals.ma_utl_userHasKey(users[au],scIdNonRicezioneMail))
+										   emailaddresses.push(infoTuple);
 									}
+									
 									    
 									if (fsRpGroupsInfo.getRecord(gr).avviso_conferma 
 											&& users[au] != globals.svy_sec_lgn_user_id
@@ -913,19 +918,21 @@ function process_richiesta_permessi(event, fs)
 						if (fsRpUsersInfo) {
 							for (var us = 1; us <= fsRpUsersInfo.getSize(); us++) 
 							{
-								var isCessatoUs = globals.isUtenteCessato(fsRpUsersInfo.sec_organization_to_rp_user_to_sec_user.user_id,globals.svy_sec_owner_id)
-								infoTuple = [fsRpUsersInfo.getRecord(us).rp_user_id,
-											 globals.getMailUtente(fsRpUsersInfo.getRecord(us).rp_user_id),
-											 1000];
-								if (fsRpUsersInfo.getRecord(us).gestione_richiesta)
-								{				
-									if(!isCessatoUs)
-									{
-										arrUserIdGestione.push(fsRpUsersInfo.getRecord(us).rp_user_id);
-										if(!globals.ma_utl_userHasKey(fsRpUsersInfo.getRecord(us).rp_user_id,scIdNonRicezioneMail))
-											  emailaddresses.push(infoTuple);
-									}
+								var isCessatoUs = globals.isUtenteCessato(fsRpUsersInfo.sec_organization_to_rp_user_to_sec_user.user_id,globals.svy_sec_owner_id);
+								
+								infoTuple = [
+												 fsRpUsersInfo.getRecord(us).rp_user_id,
+												 globals.getMailUtente(fsRpUsersInfo.getRecord(us).rp_user_id),
+												 fsRpUsersInfo.getRecord(us).gestione_richiesta ? 1000 : 999
+											 ];
+								if(!isCessatoUs)
+								{
+									if(fsRpUsersInfo.getRecord(us).gestione_richiesta)
+									   arrUserIdGestione.push(fsRpUsersInfo.getRecord(us).rp_user_id);
+									if(!globals.ma_utl_userHasKey(fsRpUsersInfo.getRecord(us).rp_user_id,scIdNonRicezioneMail))
+										  emailaddresses.push(infoTuple);
 								}
+								
 								if (fsRpUsersInfo.getRecord(us).avviso_conferma 
 										&& fsRpUsersInfo.getRecord(us).rp_user_id != globals.svy_sec_lgn_user_id 
 										&& emailaddressesConfirm.indexOf(fsRpUsersInfo.getRecord(us).rp_user_id) == -1
@@ -1151,6 +1158,7 @@ function process_richiesta_permessi(event, fs)
 								msgText += '<br/><br/>';
 								msgTextEn += '<br/><br/>';
 
+								// remove approval paragraph
 								if (!bAutoApprovazione && (emailaddresses[e][2] == 1000 || (livAut != undefined && emailaddresses[e][2] == livAut))) {
 									msgText += '<a href=\"' + url + '&status=1\"' + '>Confermare richiesta</a>';
 									msgText += '<br/>';
@@ -1179,7 +1187,8 @@ function process_richiesta_permessi(event, fs)
 									null,
 									null,
 									null,
-									globals.setSparkPostSmtpProperties()))
+									globals.setSparkPostSmtpProperties() 
+									))
 								{
 									// non è stato possibile creare il testo della mail, reinviarla dall'elenco richieste 
 									var msgErrMail = 'Si è verificato un errore durante la creazione e l\'invio della mail al/i responsabile/i. Controllare se la richiesta sia stata comunque inserita.\n';
@@ -1205,9 +1214,11 @@ function process_richiesta_permessi(event, fs)
 				// nel primo caso la mail va inviata al/i superiore/i nel secondo al dipendente
 				else {
 					// se sta inserendo una richiesta per se stesso oppure è in possesso della chiave che blocca l'approvazione
-					if (bAutoRichiesta || bApprovazioneDisabilitata) {
+					if (bAutoRichiesta || bApprovazioneDisabilitata) 
+					{
 						// se è una richiesta per se stesso segue l'iter dell'organizzazione di appartenenza
-						if (bAutoRichiesta) {
+						if (bAutoRichiesta) 
+						{
 							fsRpGroupsInfo = globals.getRpGroupsInfo(globals.svy_sec_lgn_organization_id);
 							fsRpUsersInfo = globals.getRpUsersInfo(globals.svy_sec_lgn_organization_id);
 						}
@@ -1235,16 +1246,20 @@ function process_richiesta_permessi(event, fs)
 									{
 										var isCessato_Au = globals.isUtenteCessato(_users[_au],globals.svy_sec_owner_id);
 										
-										infoTuple = [_users[_au], globals.getMailUtente(_users[_au]), 1000];
-										if (fsRpGroupsInfo.getRecord(_gr).gestione_richiesta)
+										infoTuple = [
+														_users[_au],
+														globals.getMailUtente(_users[_au]),
+														fsRpGroupsInfo.getRecord(_gr).gestione_richiesta ? 1000 : 999
+													];
+										
+										if(!isCessato_Au)
 										{
-											if(!isCessato_Au)
-											{
+											if(fsRpGroupsInfo.getRecord(_gr).gestione_richiesta)
 												arrUserIdGestione.push(_users[_au]);
-												if(!globals.ma_utl_userHasKey(_users[_au],scIdNonRicezioneMail))
-													  emailaddresses.push(infoTuple);
-											}
+											if(!globals.ma_utl_userHasKey(_users[_au],scIdNonRicezioneMail))
+												  emailaddresses.push(infoTuple);
 										}
+										
 										if (fsRpGroupsInfo.getRecord(_gr).avviso_conferma 
 												&& _users[_au] != globals.svy_sec_lgn_user_id
 												&& emailaddressesConfirm.indexOf(_users[_au]) == -1
@@ -1275,17 +1290,18 @@ function process_richiesta_permessi(event, fs)
 								{
 									var isCessato_Us = globals.isUtenteCessato(fsRpUsersInfo.getRecord(_us).rp_user_id,globals.svy_sec_owner_id);
 									
-									infoTuple = [fsRpUsersInfo.getRecord(_us).rp_user_id,
-									             globals.getMailUtente(fsRpUsersInfo.getRecord(_us).rp_user_id), 1000];
-									if (fsRpUsersInfo.getRecord(_us).gestione_richiesta)
-									{				
-										if(!isCessato_Us)
-										{
+									infoTuple = [
+												 fsRpUsersInfo.getRecord(_us).rp_user_id,
+									             globals.getMailUtente(fsRpUsersInfo.getRecord(_us).rp_user_id),
+												 fsRpUsersInfo.getRecord(_us).gestione_richiesta ? 1000 : 999];
+									if(!isCessato_Us)
+									{
+										if(fsRpUsersInfo.getRecord(_us).gestione_richiesta)
 											arrUserIdGestione.push(fsRpUsersInfo.getRecord(_us).rp_user_id);
-											if(!globals.ma_utl_userHasKey(fsRpUsersInfo.getRecord(_us).rp_user_id,scIdNonRicezioneMail))
-											emailaddresses.push(infoTuple);
-										}
+										if(!globals.ma_utl_userHasKey(fsRpUsersInfo.getRecord(_us).rp_user_id,scIdNonRicezioneMail))
+										emailaddresses.push(infoTuple);
 									}
+									
 									if (fsRpUsersInfo.getRecord(_us).avviso_conferma 
 											&& fsRpUsersInfo.getRecord(_us).rp_user_id != globals.svy_sec_lgn_user_id 
 											&& emailaddressesConfirm.indexOf(fsRpUsersInfo.getRecord(_us).rp_user_id) == -1
@@ -1425,7 +1441,7 @@ function process_richiesta_permessi(event, fs)
 						var fsNotReqCrRec = fsNotReq.getRecord(fsNotReq.newRecord());
 						fsNotReqCrRec.referenceid = idLavoratoreGiustificativoTesta;
 						fsNotReqCrRec.catalogname = globals.customer_dbserver_name;
-						fsNotReqCrRec.userid = _to_sec_user$user_id.user_id;
+						fsNotReqCrRec.userid = bApprovazioneDisabilitata ? globals.getUserIdFromIdLavoratore(vIdLavoratore, globals.svy_sec_lgn_owner_id) :  _to_sec_user$user_id.user_id;
 						
 						var dsSubsCr = databaseManager.createEmptyDataSet(0,['user','manager','confirm','refuse']);
 						var dsiCr = 0;
@@ -1462,7 +1478,7 @@ function process_richiesta_permessi(event, fs)
 						for (eCr = 0; eCr < emailaddresses.length; eCr++) 
 						{
 						    sizeCr = dsSubsCr.getMaxRowIndex();
-							for(dsiCr = 1; dsiCr <= size; dsiCr++)
+							for(dsiCr = 1; dsiCr <= sizeCr; dsiCr++)
 							{
 								if(dsSubsCr.getValue(dsiCr,1) == emailaddresses[eCr][0])
 								   dsSubsCr.setValue(dsiCr,2,1);
@@ -1472,7 +1488,7 @@ function process_richiesta_permessi(event, fs)
 						for (confCr = 0; confCr < emailaddressesConfirm.length; confCr++)
 						{
 							sizeCr = dsSubsCr.getMaxRowIndex();
-							for(dsiCr = 1; dsiCr <= size; dsiCr++)
+							for(dsiCr = 1; dsiCr <= sizeCr; dsiCr++)
 							{
 								if(dsSubsCr.getValue(dsiCr,1) == emailaddressesConfirm[confCr])
 								   dsSubsCr.setValue(dsiCr,3,1);								    
@@ -1482,7 +1498,7 @@ function process_richiesta_permessi(event, fs)
 						for (rejCr = 0; rejCr < emailaddressesRefuse.length; rejCr++)
 						{
 							sizeCr = dsSubsCr.getMaxRowIndex();
-							for(dsiCr = 1; dsiCr <= size; dsiCr++)
+							for(dsiCr = 1; dsiCr <= sizeCr; dsiCr++)
 							{
 								if(dsSubsCr.getValue(dsiCr,1) == emailaddressesRefuse[rejCr])
 								   dsSubsCr.setValue(dsiCr,4,1);
@@ -1562,7 +1578,9 @@ function process_richiesta_permessi(event, fs)
 								msgTextCr += '<br/><br/>';
 								msgTextCrEn += '<br/><br/>';
 
-								if (!bAutoApprovazione && (emailaddresses[m][2] == 1000 || (livAut != undefined && emailaddresses[m][2] == livAut))) {
+								// TODO
+								if (((bAutoRichiesta && !bAutoApprovazione) || (!bAutoRichiesta && bApprovazioneDisabilitata))
+									&& (emailaddresses[m][2] == 1000 || (livAut != undefined && emailaddresses[m][2] == livAut))) {
 									msgTextCr += '<a href=\"' + urlCr + '&status=1\"' + '>Confermare richiesta</a>';
 									msgTextCr += '<br/><br/>';
 									msgTextCr += '<a href=\"' + urlCr + '&status=2\"' + '>Rifiutare richiesta</a>';

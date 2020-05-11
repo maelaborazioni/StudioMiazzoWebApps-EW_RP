@@ -223,7 +223,8 @@ function preparaRateiReparto(idGroup,limitaAlGiorno,arrDipFiltrati)
     	var dipForm = solutionModel.cloneForm(dipFormName
     	                                      ,solutionModel.getForm(dipFormOriName));
     	
-    	var tabRateiDipHeader = fs.codice + ' - ' + fs.lavoratori_to_persone.nominativo;
+    	var tabRateiDipHeader = fs.codice + ' - ' + (fs.lavoratori_to_lavoratori_personeesterne && fs.lavoratori_to_lavoratori_personeesterne.getSize() ? fs.lavoratori_to_lavoratori_personeesterne.nominativo : 
+    													(fs.lavoratori_to_persone && fs.lavoratori_to_persone.getSize() ? fs.lavoratori_to_persone.nominativo : 'Sconosciuto'));
     	tabPanelRateiDip.newTab('tab_ratei_dip_' + arrDipReparto[i],tabRateiDipHeader,dipForm);
     	    	
  	   	y += tabHeight;									  
@@ -505,22 +506,34 @@ function process_refresh_ratei_reparto()
 function refreshRateiReparto()
 {
 	arrDipReparto = [];
+	var arrDipRepartoTmp =  null;
 	
 	if(vOptGruppoId != -1)
 	   arrDipReparto = globals.getLavoratoriReparto(vOptGruppoId);
 	else
 	{
 		if(_to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori)
-			arrDipReparto.push(arrDipReparto.push(_to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori.idlavoratore));
+		{
+			var assunzioneCr = globals.getDataAssunzione(_to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori.idlavoratore);
+			var cessazioneCr = globals.getDataCessazione(_to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori.idlavoratore);
+			
+			if(assunzioneCr <= limitaAl && (cessazioneCr >= limitaAl || cessazioneCr == null))
+			   arrDipReparto.push(_to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori.idlavoratore);
+		}
 	
-		var arrDipRepartoTmp = globals.getUserHierarchy(globals.svy_sec_lgn_user_org_id, globals.ma_sec_lgn_groupid, true);
+		arrDipRepartoTmp = globals.getUserHierarchy(globals.svy_sec_lgn_user_org_id, globals.ma_sec_lgn_groupid, true);
 		for(var d = 0; d < arrDipRepartoTmp.length; d++)
 		{
-			if(arrDipRepartoTmp[d] != null)
-				arrDipReparto.push(arrDipRepartoTmp[d]);
+			var assunzione = globals.getDataAssunzione(arrDipRepartoTmp[d]);
+			var cessazione = globals.getDataCessazione(arrDipRepartoTmp[d]);
+			
+			if(assunzione <= limitaAl && (cessazione >= limitaAl || cessazione == null))
+			{
+				if(arrDipRepartoTmp[d] != null)
+					arrDipReparto.push(arrDipRepartoTmp[d]);
+			}
 		}
-	}
-		
+	}	
 	preparaRateiReparto(vOptGruppoId, limitaAl);
 	preparaSituazioneRateiReparto(arrDipReparto,limitaAl);
 }
