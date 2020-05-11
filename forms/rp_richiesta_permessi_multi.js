@@ -53,19 +53,22 @@ function process_refresh_calendario(event) {
 			break;
 		// ticket #15123 inserimento entro x giorni del mese successivo rispetto alla data della richiesta	
 		case 'E1GLMS':
-			if(globals.getGiornoLavorativoMese(1) > vDal)
+		if(vDal < globals.TODAY && 
+		   globals.getGiornoLavorativoMeseSucc(vDal,1) < globals.TODAY)
 			   throw new Error('Non è più possibile inserire una richiesta per il periodo indicato');
 			break;
 		case 'E2GLMS':
-			if(globals.getGiornoLavorativoMese(2) > vDal)
-			   throw new Error('Non è più possibile inserire una richiesta per il periodo indicato');
+		if(vDal < globals.TODAY && 
+		   globals.getGiornoLavorativoMeseSucc(vDal,2) < globals.TODAY)
 			break;
 		case 'E3GLMS':
-			if(globals.getGiornoLavorativoMese(3) > vDal)
+		if(vDal < globals.TODAY && 
+		   globals.getGiornoLavorativoMeseSucc(vDal,3) < globals.TODAY)
 			   throw new Error('Non è più possibile inserire una richiesta per il periodo indicato');
 			break;
 		case 'E4GLMS':
-			if(globals.getGiornoLavorativoMese(4) > vDal)
+		if(vDal < globals.TODAY && 
+		   globals.getGiornoLavorativoMeseSucc(vDal,4) < globals.TODAY)
 			   throw new Error('Non è più possibile inserire una richiesta per il periodo indicato');
 			break;	
 		default:

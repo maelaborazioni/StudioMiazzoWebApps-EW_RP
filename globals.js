@@ -768,7 +768,6 @@ function gestisciRichiesta(idgiustificativotesta, status, inviaMail, noteRispost
 							var propPredefEvento = globals.getProprietaPredefinitaEvento(recRiga.lavoratori_giustificativirighe_to_e2eventi.ideventoclasse); 
 							var evParams = globals.inizializzaParametriEvento(idDitta,
 								recRiga.giorno.getFullYear() * 1000 + recRiga.giorno.getMonth() + 1,
-								0,
 								[recRiga.giorno.getDate()],
 								globals.TipoGiornaliera.BUDGET,
 								globals.TipoConnessione.CLIENTE,
@@ -1475,7 +1474,6 @@ function eliminaEventoBudget(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,_e
 			var params = globals.inizializzaParametriEvento(
 			                    fs.e2giornalieraeventi_to_e2giornaliera.e2giornaliera_to_lavoratori.idditta,
 			                    fs.e2giornalieraeventi_to_e2giornaliera.giorno.getFullYear() * 100 + fs.e2giornalieraeventi_to_e2giornaliera.giorno.getMonth() + 1,
-			                    0,
 			                    [fs.e2giornalieraeventi_to_e2giornaliera.giorno.getDate()], 
 			                    globals.TipoGiornaliera.BUDGET, 
 			                    globals._tipoConnessione,
@@ -1497,7 +1495,7 @@ function eliminaEventoBudget(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,_e
 		    }
 
 		    var _retObj = globals.eliminaEvento(params);
-		    if(!_retObj.returnValue)
+		    if(!_retObj.ReturnValue)
 		    {
 		    	globals.ma_utl_showErrorDialog('Eliminazione evento non riuscita, riprovare','Elimina evento di budget');
 		        return;
@@ -1776,7 +1774,6 @@ function eliminaRichiestaEvasa(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,
     				var recRiga = fsRighe.getRecord(row);
     				var recEvParams = globals.inizializzaParametriEvento(recRiga.lavoratori_giustificativirighe_to_lavoratori_giustificativitesta.lavoratori_giustificativitesta_to_lavoratori.idditta,
     					                                                 recRiga.giorno.getFullYear()*100 + recRiga.giorno.getMonth() + 1,
-																		 0,
 																		 [recRiga.giorno.getDate()],
 																		 globals.TipoGiornaliera.BUDGET,
 																		 globals.TipoConnessione.CLIENTE,
@@ -1791,7 +1788,7 @@ function eliminaRichiestaEvasa(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,
     				
                     // elimina l'evento dalla giornaliera di budget
     				var objElimina = globals.eliminaEvento(recEvParams);
-    				if(objElimina.returnValue == false)
+    				if(objElimina.ReturnValue == false)
     				   globals.ma_utl_showWarningDialog('Controllare la giornaliera di budget per il dipendente' +
     					                                globals.getNominativo(recRiga.idlavoratore) +
 														' nel giorno ' + recRiga.giorno,'Elimina richiesta');
@@ -1854,11 +1851,10 @@ function eliminaRichiestaEvasa(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,
 function conteggiaDaBudget(idDitta, employeesIds, arrayGiorni, soloNonConteggiati, giorno, tipoGiorn)
 {
 	var periodo = giorno.getFullYear() * 100 + giorno.getMonth() + 1;
-	var params = globals.inizializzaParametriCompilaConteggio
+	var params = globals.inizializzaParametriConteggio
 	            (
 	                 idDitta,
 	                 periodo,
-	                 tipoGiorn,
 	                 globals._tipoConnessione,
 	                 arrayGiorni,
 	                 employeesIds,
@@ -1866,7 +1862,7 @@ function conteggiaDaBudget(idDitta, employeesIds, arrayGiorni, soloNonConteggiat
 	             );
 	
 	//lanciamo il calcolo per la compilazione 
-	var url = WS_RFP_URL + "/Timbrature/Conteggia";
+	var url = WS_STAMPING + "/Stamping32/Conteggia";
 	
 	var msg =  "Portare l'evento dalla giornaliera di budget alla normale?";
 	var answer = globals.ma_utl_showYesNoQuestion(msg ,'Porta in giornaliera');
@@ -2270,6 +2266,10 @@ function ottieniDataSetRateiReparto(arrDip,allaData,soloRateiDipendente)
 											Lavoratori L \
 										WHERE \
 											idLavoratore IN (" + arrDip.map(function (d){return d}).join(',') + ") \
+										AND \
+										L.Assunzione <= ? \
+										AND \
+										(L.Cessazione IS NULL OR L.Cessazione >= ?) \
 									) AS L \
 									LEFT JOIN Ditte_Ratei DR \
 									ON L.idDitta = DR.IdDitta \
@@ -2346,7 +2346,7 @@ function ottieniDataSetRateiReparto(arrDip,allaData,soloRateiDipendente)
 	    
 	var vArr = new Array();
         var allaDataIso = utils.dateFormat(allaData,globals.ISO_DATEFORMAT);
-        vArr.push(allaDataIso,allaDataIso,allaDataIso,allaDataIso,allaDataIso,allaDataIso,allaDataIso);
+        vArr.push(allaDataIso,allaDataIso,allaDataIso,allaDataIso,allaDataIso,allaDataIso,allaDataIso,allaDataIso,allaDataIso);
     var vDatasetRateiDip = databaseManager.getDataSetByQuery(globals.Server.MA_PRESENZE, vQuery, vArr, -1);    
         vDatasetRateiDip.addColumn('ResiduoAnnoPrec',vDatasetRateiDip.getMaxColumnIndex() + 1,JSColumn.NUMBER);
     
@@ -2452,7 +2452,7 @@ function getProprietaPredefinitaEvento(idEventoClasse)
 	if(fsEventi.find())
 	{
 		fsEventi.ideventoclasse = idEventoClasse;
-		fsEventi.predefinito = 1
+		fsEventi.predefinito = 1;
 		if(fsEventi.search())
 		   return fsEventi.codiceproprieta;
 	}
@@ -2909,10 +2909,10 @@ function gestisciRichiestaWS(clientDb, idgiustificativotesta, operatore_id, stat
 									var recRiga = fsRighe.getRecord(i);
 									dalleOre = recRiga.dalleore;
 									alleOre = recRiga.alleore;
-									var propPredefEvento = globals.getProprietaPredefinitaEvento(recRiga.lavoratori_giustificativirighe_to_e2eventi.ideventoclasse);
+									// Ticket 17552 - Per l'evento \FS capita che venga messa come predefinita la proprietà DL invece che quella di default vuota 
+									var propPredefEvento = globals.getProprietaPredefinitaEvento(globals.getClasseEvento(recRiga.idevento));
 									var evParams = globals.inizializzaParametriEvento(idDitta,
 										recRiga.giorno.getFullYear() * 100 + recRiga.giorno.getMonth() + 1,
-										0,
 										[recRiga.giorno.getDate()],
 										globals.TipoGiornaliera.BUDGET,
 										globals.TipoConnessione.CLIENTE,
@@ -2997,8 +2997,7 @@ function gestisciRichiestaWS(clientDb, idgiustificativotesta, operatore_id, stat
  */
 function salvaEventoWS(wsUrl,_evParams,dbName)
 {	
-	var url = 'http://srv-epiweb/Leaf_RFP'; //(wsUrl != null && wsUrl != "") ? wsUrl : globals.RestServerLink;
-	url += "/Eventi/SalvaWS";
+	var url = 'http://srv-epiweb/Event/Event32/SalvaEvento';
 	var responseObj = globals.getWebServiceResponseWS(url,_evParams,dbName);
-	return responseObj['returnValue'];
+	return responseObj.ReturnValue == true;
 }

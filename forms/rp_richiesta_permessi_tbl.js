@@ -217,9 +217,8 @@ function AggiornaSelezioneEventoRp(_rec)
 		    		if(fs.getRecord(r)['idevento'] == null)
 		    		{
 		    			var isEventoAZeroOre = globals.isEventoAZeroOre(_rec.idevento);
-		    			var fascia = globals.getFasciaAssegnataGiorno(idLav,fs.getRecord(r)['giorno']) 
-						             || globals.getFasciaProgrammataGiorno(idLav,fs.getRecord(r)['giorno'])
-									 || globals.getFasciaTeoricaGiorno(idLav,fs.getRecord(r)['giorno']);
+		    			// Ticket 16920
+		    			var fascia = globals.ottieniInformazioniFasciaGiorno(idLav,fs.getRecord(r)['giorno']);
 		    			if(fascia.totaleorefascia == 0 && isEventoAZeroOre
 		    			   || fascia.totaleorefascia > 0)
 		    			{

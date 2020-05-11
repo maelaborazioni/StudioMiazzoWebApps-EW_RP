@@ -223,7 +223,8 @@ function preparaRateiReparto(idGroup,limitaAlGiorno,arrDipFiltrati)
     	var dipForm = solutionModel.cloneForm(dipFormName
     	                                      ,solutionModel.getForm(dipFormOriName));
     	
-    	var tabRateiDipHeader = fs.codice + ' - ' + fs.lavoratori_to_persone.nominativo;
+    	var tabRateiDipHeader = fs.codice + ' - ' + (fs.lavoratori_to_lavoratori_personeesterne && fs.lavoratori_to_lavoratori_personeesterne.getSize() ? fs.lavoratori_to_lavoratori_personeesterne.nominativo : 
+    													(fs.lavoratori_to_persone && fs.lavoratori_to_persone.getSize() ? fs.lavoratori_to_persone.nominativo : 'Sconosciuto'));
     	tabPanelRateiDip.newTab('tab_ratei_dip_' + arrDipReparto[i],tabRateiDipHeader,dipForm);
     	    	
  	   	y += tabHeight;									  
@@ -505,22 +506,35 @@ function process_refresh_ratei_reparto()
 function refreshRateiReparto()
 {
 	arrDipReparto = [];
+	/** @type {Array<Number>} */
+	var arrDipRepartoTmp =  null;
 	
 	if(vOptGruppoId != -1)
 	   arrDipReparto = globals.getLavoratoriReparto(vOptGruppoId);
 	else
 	{
 		if(_to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori)
-			arrDipReparto.push(arrDipReparto.push(_to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori.idlavoratore));
-	
-		var arrDipRepartoTmp = globals.getUserHierarchy(globals.svy_sec_lgn_user_org_id, globals.ma_sec_lgn_groupid, true);
+		{
+			var assunzioneCr = globals.getDataAssunzione(_to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori.idlavoratore);
+			var cessazioneCr = globals.getDataCessazione(_to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori.idlavoratore);
+			
+			if(assunzioneCr <= limitaAl && (cessazioneCr >= limitaAl || cessazioneCr == null))
+			   arrDipReparto.push(_to_sec_user$user_id.sec_user_to_sec_user_to_lavoratori.idlavoratore);
+		}
+			
+		arrDipRepartoTmp = globals.getUserHierarchy(globals.svy_sec_lgn_user_org_id, globals.ma_sec_lgn_groupid, true);
 		for(var d = 0; d < arrDipRepartoTmp.length; d++)
 		{
-			if(arrDipRepartoTmp[d] != null)
-				arrDipReparto.push(arrDipRepartoTmp[d]);
+			var assunzione = globals.getDataAssunzione(arrDipRepartoTmp[d]);
+			var cessazione = globals.getDataCessazione(arrDipRepartoTmp[d]);
+			
+			if(assunzione <= limitaAl && (cessazione >= limitaAl || cessazione == null))
+			{
+				if(arrDipRepartoTmp[d] != null)
+					arrDipReparto.push(arrDipRepartoTmp[d]);
+			}
 		}
-	}
-		
+	}	
 	preparaRateiReparto(vOptGruppoId, limitaAl);
 	preparaSituazioneRateiReparto(arrDipReparto,limitaAl);
 }
@@ -627,7 +641,17 @@ function process_stampa_situazione_ratei_reparto()
 		params['groupRaggruppamento'] = false;
 		params['groupTipoRaggruppamento'] = 0;
 	
-	    var url = globals.WS_MULTI_URL + "/Stampe/StampaSituazioneRatei";
+		// add new operation info for future updates
+		var operation = scopes.operation.create(params['idditta'],globals.getGruppoInstallazioneDitta(params['idditta']),params['periodo'],globals.OpType.SSR);
+		if(operation == null || operation.OperationId == null)
+		{
+			globals.ma_utl_showErrorDialog('Errore durante la preparazione dell\'operazione lunga. Riprovare o contattare il  servizio di Assistenza.');
+			return;
+		}
+		params.operationid = operation.OperationId;
+		params.operationhash = operation.OperationHash;
+		
+	    var url = globals.WS_REPORT + "/Report32/StampaSituazioneRateiAsync";
 	    globals.addJsonWebServiceJob(url, params);
 	}
 	catch(ex)

@@ -81,7 +81,6 @@ function updateStatoRichiesta(_itemInd, _parItem, _isSel, _parMenTxt, _menuTxt,e
 					var propPredefEvento = globals.getProprietaPredefinitaEvento(recRiga.lavoratori_giustificativirighe_to_e2eventi.ideventoclasse);
 					var evParams = globals.inizializzaParametriEvento(idDitta,
 						recRiga.giorno.getFullYear() * 100 + recRiga.giorno.getMonth() + 1,
-						0,
 						[recRiga.giorno.getDate()],
 						globals.TipoGiornaliera.BUDGET,
 						globals.TipoConnessione.CLIENTE,

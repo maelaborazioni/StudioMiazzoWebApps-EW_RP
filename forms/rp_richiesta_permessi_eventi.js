@@ -191,28 +191,21 @@ function AggiornaProprietaEvento(_rec)
 function FiltraProprietaRicSelezionabili(idEvento)
 {	
 	var bReturn = false;
-	var url = globals.WS_RFP_URL + "/Eventi/FiltraProprieta";
-	/** @type Number*/
-	var periodo = globals.toPeriodo(globals.TODAY.getFullYear(),globals.TODAY.getMonth() + 1);
-	
-	var giorno = forms['rp_richiesta_permessi_tbl_temp'].foundset.getSelectedRecord()['giorno'];
-		
+	var url = globals.WS_EVENT + "/Event32/FiltraProprieta";
 	var params = globals.inizializzaParametriFiltroEvento(
-					 forms.rp_gestione_richieste.idditta
-					,periodo
-					,globals.TipoGiornaliera.NORMALE
+					globals.TipoGiornaliera.NORMALE
 					,globals._tipoConnessione
-					,[giorno]
 					,[forms.rp_gestione_richieste.idlavoratore]
-					,idEvento
 					);
 	
 	var response = globals.getWebServiceResponse(url, params);
 
-	if(response && response['proprieta'])
-	   /** @type {Array} */
-	   _arrIdPropSelezionabili = response['proprieta'];
-		
+	if(response && response.ReturnValue)
+	{
+		bReturn = true;
+		/** @type {Array} */
+	   _arrIdPropSelezionabili = response.ReturnValue;
+	}	
 	return bReturn;
 }
 
