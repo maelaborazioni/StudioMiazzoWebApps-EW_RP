@@ -202,7 +202,7 @@ function process_refresh_calendario(event,verificaFestivita) {
 			var idDitta = globals.getDitta(vIdLavoratore);
 			for(var p = 0; p < arrPeriodi.length; p++)
 			{
-				var url = globals.WS_CALENDAR + "/Holiday32/RiepilogoFestivitaLavoratorePeriodo";
+				var url = globals.WS_CALENDAR + "/Holiday32/WorkerHolidays";
 				var par = {
 					tipoconnessione : globals.TipoConnessione.CLIENTE,
 					databasecliente : 'Cliente_' + globals.customer_dbserver_name,

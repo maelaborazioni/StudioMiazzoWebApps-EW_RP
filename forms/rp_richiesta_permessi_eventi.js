@@ -191,7 +191,7 @@ function AggiornaProprietaEvento(_rec)
 function FiltraProprietaRicSelezionabili(idEvento)
 {	
 	var bReturn = false;
-	var url = globals.WS_EVENT + "/Event32/FiltraProprieta";
+	var url = globals.WS_EVENT + "/Event32/FilterProperties";
 	var params = globals.inizializzaParametriFiltroEvento(
 					globals.TipoGiornaliera.NORMALE
 					,globals._tipoConnessione

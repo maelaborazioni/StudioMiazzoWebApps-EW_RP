@@ -643,15 +643,15 @@ function process_stampa_situazione_ratei_reparto()
 	
 		// add new operation info for future updates
 		var operation = scopes.operation.create(params['idditta'],globals.getGruppoInstallazioneDitta(params['idditta']),params['periodo'],globals.OpType.SSR);
-		if(operation == null || operation.OperationId == null)
+		if(operation == null || operation.operationId == null)
 		{
 			globals.ma_utl_showErrorDialog('Errore durante la preparazione dell\'operazione lunga. Riprovare o contattare il  servizio di Assistenza.');
 			return;
 		}
-		params.operationid = operation.OperationId;
-		params.operationhash = operation.OperationHash;
+		params.operationid = operation.operationId;
+		params.operationhash = operation.operationHash;
 		
-	    var url = globals.WS_REPORT + "/Report32/StampaSituazioneRateiAsync";
+	    var url = globals.WS_REPORT + "/Report32/RateSituationAsync";
 	    globals.addJsonWebServiceJob(url, params);
 	}
 	catch(ex)

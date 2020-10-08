@@ -878,7 +878,7 @@ function onRenderVC(event)
 {
 	var _rec = event.getRecord();
 	var _recRen = event.getRenderable();
-    var _name = _recRen.getName();
+    var _name = _recRen.getName();	
     if(_name)
     {
     	var _length = _name.length;
@@ -1862,7 +1862,7 @@ function conteggiaDaBudget(idDitta, employeesIds, arrayGiorni, soloNonConteggiat
 	             );
 	
 	//lanciamo il calcolo per la compilazione 
-	var url = WS_STAMPING + "/Stamping32/Conteggia";
+	var url = WS_STAMPING + "/Stamping32/Count";
 	
 	var msg =  "Portare l'evento dalla giornaliera di budget alla normale?";
 	var answer = globals.ma_utl_showYesNoQuestion(msg ,'Porta in giornaliera');
